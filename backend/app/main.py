@@ -1,11 +1,13 @@
 import logging
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import make_asgi_app
 from app.database import Base, engine
 from app.config import settings
 from app.auth.auth_router import router as auth_router
-from app.routes import health, predict, upload, reports, patients, patient_progression
+from app.routes import health, predict, upload, reports, patients, patient_progression, statistics
 from app import models
 
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +25,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve uploaded images
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
@@ -33,6 +40,7 @@ app.include_router(upload.router)
 app.include_router(reports.router)
 app.include_router(patients.router)
 app.include_router(patient_progression.router)
+app.include_router(statistics.router)
 
 @app.get("/")
 def root():

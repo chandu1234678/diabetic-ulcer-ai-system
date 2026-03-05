@@ -3,7 +3,10 @@ import torchvision.transforms as transforms
 from PIL import Image
 import numpy as np
 import io
+import os
 import requests
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 
 def get_preprocessing_transforms():
     return transforms.Compose([
@@ -15,6 +18,16 @@ def get_preprocessing_transforms():
         )
     ])
 
+def resolve_image_path(image_path_or_url: str) -> str:
+    """Resolve image path: /uploads/file -> local path, http -> URL, else local path."""
+    if image_path_or_url.startswith("/uploads/"):
+        filename = image_path_or_url.replace("/uploads/", "")
+        return os.path.join(UPLOAD_DIR, filename)
+    if image_path_or_url.startswith("local://"):
+        filename = image_path_or_url.replace("local://", "")
+        return os.path.join(UPLOAD_DIR, filename)
+    return image_path_or_url
+
 def download_image(image_url: str) -> Image.Image:
     response = requests.get(image_url, timeout=10)
     response.raise_for_status()
@@ -22,10 +35,11 @@ def download_image(image_url: str) -> Image.Image:
     return image
 
 def preprocess_image(image_path_or_url: str) -> torch.Tensor:
-    if image_path_or_url.startswith(('http://', 'https://')):
-        image = download_image(image_path_or_url)
+    resolved = resolve_image_path(image_path_or_url)
+    if resolved.startswith(('http://', 'https://')):
+        image = download_image(resolved)
     else:
-        image = Image.open(image_path_or_url).convert('RGB')
+        image = Image.open(resolved).convert('RGB')
     
     transforms_pipeline = get_preprocessing_transforms()
     tensor = transforms_pipeline(image)

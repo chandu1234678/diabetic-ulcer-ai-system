@@ -1,0 +1,11 @@
+patient_id,age,gender,diabetes_type,duration_years,hba1c_level,bmi,smoking_status,neuropathy,previous_ulcers
+P001,45,M,Type 2,5,7.2,28.5,Never,False,0
+P002,62,F,Type 2,12,8.5,32.1,Former,True,1
+P003,51,M,Type 1,20,7.8,24.3,Never,True,2
+P004,58,F,Type 2,8,6.9,26.7,Active,False,0
+P005,68,M,Type 2,15,9.1,31.2,Never,True,3
+P006,55,F,Type 2,10,7.5,29.8,Former,True,1
+P007,49,M,Type 1,18,8.2,23.5,Never,False,0
+P008,64,F,Type 2,13,8.8,35.4,Active,True,2
+P009,52,M,Type 2,7,7.1,27.3,Never,False,0
+P010,71,M,Type 2,20,9.3,33.6,Never,True,4

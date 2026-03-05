@@ -1,0 +1,51 @@
+# MLflow Model Registry Configuration
+
+registry:
+  tracking_uri: http://localhost:5000
+  backend_store_uri: file:./mlruns
+  default_artifact_root: ./mlruns
+
+models:
+  cnn_ulcer_model:
+    name: "cnn_ulcer_model"
+    description: "ResNet50-based CNN for ulcer classification"
+    version: "1.0.0"
+    stage: "Production"
+    metrics:
+      accuracy: 0.95
+      precision: 0.93
+      recall: 0.97
+      f1_score: 0.95
+  
+  segmentation_model:
+    name: "segmentation_model"
+    description: "U-Net for ulcer boundary segmentation"
+    version: "1.0.0"
+    stage: "Production"
+    metrics:
+      iou: 0.92
+      dice: 0.94
+  
+  multimodal_model:
+    name: "multimodal_model"
+    description: "Fusion model combining image and clinical data"
+    version: "1.0.0"
+    stage: "Production"
+    metrics:
+      accuracy: 0.97
+      auc_roc: 0.99
+
+model_serving:
+  port: 8000
+  workers: 4
+  timeout: 30
+
+artifact_storage:
+  type: "local"
+  path: "./model_artifacts"
+  
+metadata:
+  author: "Hackathon Team"
+  organization: "Healthcare AI"
+  project: "Diabetic Ulcer Detection"
+  created_date: "2026-03-05"

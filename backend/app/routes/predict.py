@@ -39,6 +39,12 @@ async def predict(request: PredictionRequest, user: User = Depends(get_current_u
     return PredictionResponse(
         prediction=result["prediction"],
         confidence=result["confidence"],
+        risk_score=result["risk_score"],
+        risk_level=result["risk_level"],
+        severity=result["severity"],
+        affected_area=result["affected_area"],
+        explanation_text=result["explanation_text"],
+        recommendations=result["recommendations"],
         gradcam_heatmap=result["gradcam_heatmap"],
         shap_importance=result["shap_importance"],
         image_url=result["image_url"]

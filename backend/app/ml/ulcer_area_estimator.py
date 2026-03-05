@@ -2,11 +2,27 @@ import numpy as np
 from PIL import Image
 import requests
 import io
+import os
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+
+def resolve_image_path(image_url: str) -> str:
+    if image_url.startswith("/uploads/"):
+        filename = image_url.replace("/uploads/", "")
+        return os.path.join(UPLOAD_DIR, filename)
+    if image_url.startswith("local://"):
+        filename = image_url.replace("local://", "")
+        return os.path.join(UPLOAD_DIR, filename)
+    return image_url
 
 def estimate_ulcer_area(image_url: str) -> float:
-    response = requests.get(image_url, timeout=10)
-    response.raise_for_status()
-    image = Image.open(io.BytesIO(response.content)).convert('RGB')
+    resolved = resolve_image_path(image_url)
+    if resolved.startswith(('http://', 'https://')):
+        response = requests.get(resolved, timeout=10)
+        response.raise_for_status()
+        image = Image.open(io.BytesIO(response.content)).convert('RGB')
+    else:
+        image = Image.open(resolved).convert('RGB')
     
     image_array = np.array(image)
     
@@ -21,7 +37,6 @@ def estimate_ulcer_area(image_url: str) -> float:
     ulcer_pixels = np.sum(mask)
     total_pixels = image_array.shape[0] * image_array.shape[1]
     
-    ulcer_area_percentage = (ulcer_pixels / total_pixels) * 100
     ulcer_area_fraction = ulcer_pixels / total_pixels
     
     return min(ulcer_area_fraction, 1.0)

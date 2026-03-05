@@ -2,23 +2,35 @@
 
 ## Overview
 
-This project explores how artificial intelligence can support clinicians in detecting and monitoring diabetic foot ulcers. The goal is to build an **Explainable AI Clinical Decision Support System** that combines image analysis and clinical data to estimate ulcer risk and provide interpretable insights.
+This project explores how artificial intelligence can assist clinicians in detecting and monitoring **diabetic foot ulcers**.
 
-The system is designed as a **full-stack AI application** consisting of a React frontend, a FastAPI backend, and a machine learning pipeline. In addition to predictions, the system also generates explanations such as Grad-CAM heatmaps and feature importance visualizations.
+The goal is to build an **Explainable AI Clinical Decision Support System** that combines **medical image analysis** and **clinical data** to estimate ulcer risk and provide interpretable insights.
 
-The project was built as a learning experience to explore modern technologies including **FastAPI, PyTorch, React, Docker, MLflow, and Prometheus monitoring**.
+The platform is designed as a **full-stack AI application** consisting of:
+
+* **React frontend** for the clinical dashboard
+* **FastAPI backend** for APIs and data processing
+* **Machine learning pipeline** for prediction and explainability
+
+In addition to predictions, the system generates explanations such as **Grad-CAM heatmaps** and **SHAP feature importance visualizations**.
+
+This project was built to explore modern technologies including **FastAPI, PyTorch, React, Docker, MLflow, and Prometheus monitoring**.
 
 ---
 
-## Problem Statement
+# Problem Statement
 
-Diabetic foot ulcers are one of the most serious complications of diabetes. Early detection and monitoring can help prevent infections, amputations, and long-term complications.
+Diabetic foot ulcers are one of the most serious complications of diabetes. According to the **International Diabetes Federation**, millions of patients worldwide develop foot ulcers each year, which can lead to infection, hospitalization, and amputation.
 
-However, many AI systems behave like a “black box”. Clinicians often need explanations to trust model predictions. This project focuses on **Explainable AI**, providing both predictions and interpretable outputs that highlight what the model is learning.
+Early detection and continuous monitoring are critical.
+
+However, many AI systems behave as **black boxes**, making it difficult for clinicians to trust predictions.
+
+This project focuses on **Explainable AI**, providing both predictions and interpretable outputs that help clinicians understand how the model reaches its decisions.
 
 ---
 
-## Features
+# Features
 
 * Diabetic ulcer detection from foot images
 * Integration of clinical data (age, BMI, diabetes duration, etc.)
@@ -33,30 +45,49 @@ However, many AI systems behave like a “black box”. Clinicians often need ex
 
 ---
 
-## System Architecture
+# System Architecture
 
-The system follows a modular full-stack architecture.
+The system follows a **modular full-stack architecture**.
 
-Frontend (React) provides the clinical dashboard interface.
-Backend (FastAPI) exposes REST APIs for prediction, authentication, and data management.
-The ML pipeline performs inference and explainability analysis.
+**Frontend (React)** provides the clinical dashboard interface.
+
+**Backend (FastAPI)** exposes REST APIs for:
+
+* prediction
+* authentication
+* patient data management
+* model inference
+
+The **machine learning pipeline** performs:
+
+* image preprocessing
+* prediction
+* explainability analysis
 
 High-level architecture:
 
-Frontend → FastAPI Backend → AI Models → Database
+```
+Frontend (React)
+        ↓
+FastAPI Backend
+        ↓
+AI Models (PyTorch)
+        ↓
+Database + Cloud Storage
+```
 
 ---
 
-## Technology Stack
+# Technology Stack
 
-### Frontend
+## Frontend
 
 * React
 * Vite
 * TailwindCSS
 * Chart.js
 
-### Backend
+## Backend
 
 * FastAPI
 * SQLAlchemy
@@ -64,7 +95,7 @@ Frontend → FastAPI Backend → AI Models → Database
 * JWT Authentication
 * Cloudinary (image storage)
 
-### Machine Learning
+## Machine Learning
 
 * PyTorch
 * CNN for image classification
@@ -72,7 +103,7 @@ Frontend → FastAPI Backend → AI Models → Database
 * Grad-CAM visualization
 * SHAP explainability
 
-### DevOps / MLOps
+## DevOps / MLOps
 
 * Docker
 * Prometheus monitoring
@@ -82,54 +113,64 @@ Frontend → FastAPI Backend → AI Models → Database
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```
-hackathon/
+diabetic-ulcer-ai-system/
+
+backend/
 │
-├── backend/
-│   ├── app/
-│   │   ├── auth/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   ├── ml/
-│   │   ├── explainability/
-│   │   └── monitoring/
-│   │
-│   └── requirements.txt
+├── app/
+│   ├── auth/
+│   ├── routes/
+│   ├── services/
+│   ├── ml/
+│   ├── explainability/
+│   └── monitoring/
 │
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── styles/
+└── requirements.txt
+
+
+frontend/
 │
-├── datasets/
-│   ├── images/
-│   ├── segmentation_masks/
-│   └── clinical_data/
+└── src/
+    ├── components/
+    ├── pages/
+    ├── services/
+    └── styles/
+
+
+datasets/
 │
-├── deployment/
-│   ├── monitoring/
-│   ├── nginx/
-│   └── kubernetes/
+├── images/
+├── segmentation_masks/
+└── clinical_data/
+
+
+deployment/
 │
-└── docs/
+├── monitoring/
+├── nginx/
+└── kubernetes/
+
+
+docs/
 ```
 
 ---
 
-## Getting Started
+# Getting Started
 
-### 1. Clone the repository
+## 1. Clone the repository
 
 ```
-git clone https://github.com/yourusername/diabetic-ulcer-ai-system.git
+git clone https://github.com/chandu1234678/diabetic-ulcer-ai-system.git
 cd diabetic-ulcer-ai-system
 ```
 
-### 2. Backend Setup
+---
+
+# Backend Setup
 
 ```
 cd backend
@@ -158,7 +199,7 @@ http://127.0.0.1:8000/docs
 
 ---
 
-### 3. Frontend Setup
+# Frontend Setup
 
 ```
 cd frontend
@@ -174,7 +215,7 @@ http://localhost:5173
 
 ---
 
-## Example Workflow
+# Example Workflow
 
 1. User logs into the system
 2. Uploads a foot image and clinical information
@@ -184,57 +225,73 @@ http://localhost:5173
 
 ---
 
-## Explainability
+# Explainability
 
-The project emphasizes interpretability.
+This project emphasizes **model interpretability**.
 
-Grad-CAM highlights important image regions used for prediction.
+Two main explanation methods are used:
 
-SHAP visualizations show which clinical features influence the model output.
+**Grad-CAM**
 
-This helps clinicians understand **why the system made a prediction** rather than only providing a result.
+Highlights important regions of the image used by the model for prediction.
+
+**SHAP**
+
+Shows how clinical features influence the prediction output.
+
+These techniques help clinicians understand **why the system produced a specific prediction**.
 
 ---
 
-## Future Improvements
+# Future Improvements
 
-* Improve model accuracy using larger datasets
+* Improve model accuracy using larger medical datasets
 * Train segmentation models for ulcer area detection
 * Add longitudinal patient analysis for healing prediction
-* Deploy the system to a cloud environment
-* Add mobile support for field clinics
+* Deploy the system to cloud infrastructure
+* Develop a mobile interface for field clinics
 
 ---
 
-## Learning Outcomes
+# Learning Outcomes
 
-Through this project I explored several modern technologies and concepts:
+This project explores several important concepts in modern AI system development:
 
 * Building production-style APIs using FastAPI
 * Integrating deep learning models with web applications
 * Designing explainable AI systems
-* Working with Docker and monitoring tools
+* Using Docker for containerized deployments
+* Monitoring AI services using Prometheus and Grafana
 * Managing ML experiments using MLflow
 
-This project helped me better understand how AI systems can be built end-to-end and deployed as real applications.
-
 ---
+
+# System Architecture Diagrams
+
 ## Overall System Architecture
 
-<img width="4992" height="916" alt="mermaid-diagram (11)" src="https://github.com/user-attachments/assets/90d6f38f-e2e9-4a13-9440-54bb0631bfbb" />
+<img width="4992" height="916" alt="architecture" src="https://github.com/user-attachments/assets/90d6f38f-e2e9-4a13-9440-54bb0631bfbb" />
+
+---
 
 ## Prediction Pipeline (AI Workflow)
 
-<img width="1063" height="1683" alt="mermaid-diagram (12)" src="https://github.com/user-attachments/assets/fd0fcbcc-1502-47b2-b63a-5ff43791e72a" />
+<img width="1063" height="1683" alt="pipeline" src="https://github.com/user-attachments/assets/fd0fcbcc-1502-47b2-b63a-5ff43791e72a" />
 
-## Ulcer Progression Tracking (Unique Feature)
+---
 
-<img width="1150" height="1345" alt="mermaid-diagram (13)" src="https://github.com/user-attachments/assets/914ba666-da7d-4772-ae9a-0ee1cd22b298" />
+## Ulcer Progression Tracking
+
+<img width="1150" height="1345" alt="progression" src="https://github.com/user-attachments/assets/914ba666-da7d-4772-ae9a-0ee1cd22b298" />
+
+---
 
 ## Backend API Flow
-<img width="2356" height="1266" alt="mermaid-diagram (14)" src="https://github.com/user-attachments/assets/d224691b-b6e5-4296-a2a5-c5fcff5f74e6" />
 
+<img width="2356" height="1266" alt="api-flow" src="https://github.com/user-attachments/assets/d224691b-b6e5-4296-a2a5-c5fcff5f74e6" />
 
-## License
+---
 
-This project is intended for educational and research purposes.
+# License
+
+This project is intended for **educational and research purposes only**.

@@ -1,0 +1,69 @@
+stages:
+  prepare:
+    cmd: python ../../scripts/prepare_dataset.py
+    deps:
+      - ../../datasets/images
+      - ../../datasets/clinical_data
+    outs:
+      - ../../datasets/prepared_data:
+          cache: false
+    params:
+      - train.test_split
+
+  train_cnn:
+    cmd: python ../../scripts/train_cnn_model.py
+    deps:
+      - ../../datasets/prepared_data
+      - ../../backend/app/ml/cnn_model.py
+      - ../../backend/app/ml/train.py
+    outs:
+      - ../../model_weights/cnn_ulcer_model.pth:
+          cache: false
+    params:
+      - train.epochs
+      - train.batch_size
+      - train.learning_rate
+    plots:
+      - ../../experiments/training_logs/cnn_metrics.json:
+          x: epoch
+          y:
+            ../../experiments/training_logs/cnn_metrics.json: [train_loss, val_loss]
+
+  train_segmentation:
+    cmd: python ../../scripts/train_segmentation_model.py
+    deps:
+      - ../../datasets/prepared_data
+      - ../../backend/app/ml/preprocess.py
+    outs:
+      - ../../model_weights/segmentation_model.pth:
+          cache: false
+    params:
+      - train.epochs
+      - train.batch_size
+
+  train_multimodal:
+    cmd: python ../../scripts/train_multimodal_model.py
+    deps:
+      - ../../model_weights/cnn_ulcer_model.pth
+      - ../../datasets/prepared_data
+      - ../../backend/app/ml/multimodal_model.py
+    outs:
+      - ../../model_weights/multimodal_model.pth:
+          cache: false
+    params:
+      - train.epochs
+      - train.batch_size
+
+plots:
+  - ../../experiments/evaluation_reports/confusion_matrix.json:
+      x: actual
+      y: predicted
+  - ../../experiments/training_logs:
+      x: epoch
+      y:
+        - loss
+        - accuracy
+
+params:
+  - ../../backend/app/config.py:
+      - train

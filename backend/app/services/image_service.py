@@ -2,6 +2,10 @@ from fastapi import UploadFile, HTTPException
 from app.utils.cloud_storage import upload_image_to_cloud, delete_image_from_cloud
 from app.utils.validators import validate_image_extension, validate_image_size
 import uuid
+import os
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 async def upload_image(file: UploadFile):
     if not validate_image_extension(file.filename):
@@ -14,7 +18,12 @@ async def upload_image(file: UploadFile):
     
     unique_filename = f"{uuid.uuid4()}_{file.filename}"
     
-    image_url = upload_image_to_cloud(file_content, unique_filename)
+    # Save locally
+    filepath = os.path.join(UPLOAD_DIR, unique_filename)
+    with open(filepath, "wb") as f:
+        f.write(file_content)
+    
+    image_url = f"/uploads/{unique_filename}"
     
     return {
         "filename": unique_filename,

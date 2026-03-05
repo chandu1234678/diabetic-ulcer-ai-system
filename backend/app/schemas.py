@@ -47,6 +47,12 @@ class PredictionRequest(BaseModel):
 class PredictionResponse(BaseModel):
     prediction: str
     confidence: float
+    risk_score: float
+    risk_level: str
+    severity: str
+    affected_area: float
+    explanation_text: str
+    recommendations: List[str]
     gradcam_heatmap: List[List[float]]
     shap_importance: dict
     image_url: str

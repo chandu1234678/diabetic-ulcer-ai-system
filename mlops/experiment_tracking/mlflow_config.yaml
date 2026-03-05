@@ -1,0 +1,80 @@
+tracking_uri: http://localhost:5000
+
+experiment:
+  name: diabetic-ulcer-detection
+  description: Tracking experiments for diabetic foot ulcer detection using CNN and multimodal models
+
+run_config:
+  tags:
+    - diabetic-ulcer
+    - deep-learning
+    - explainable-ai
+  
+  params:
+    cnn:
+      model_architecture: ResNet50
+      pretrained: true
+      input_size: 224
+      num_classes: 2
+      learning_rate: 0.001
+      weight_decay: 1e-4
+      epochs: 50
+      batch_size: 32
+      optimizer: adam
+      loss_function: cross_entropy
+    
+    multimodal:
+      image_feature_dim: 2048
+      clinical_feature_dim: 4
+      hidden_dim: 512
+      dropout: 0.3
+      learning_rate: 0.0005
+      epochs: 30
+      batch_size: 32
+    
+    segmentation:
+      model: U-Net
+      input_size: 256
+      encoder_depth: 4
+      learning_rate: 0.001
+      epochs: 100
+      batch_size: 16
+    
+    data:
+      train_val_split: 0.8
+      test_split: 0.1
+      augmentation: true
+      normalization: imagenet
+      image_size: 224
+    
+    explainability:
+      gradcam_layer: layer4
+      shap_background_samples: 100
+      lime_samples: 1000
+
+metrics:
+  - accuracy
+  - precision
+  - recall
+  - f1_score
+  - auc_roc
+  - confusion_matrix
+  - model_inference_time
+  - model_memory_usage
+
+artifacts:
+  - model_weights
+  - training_curves
+  - confusion_matrices
+  - feature_importance_plots
+  - gradcam_visualizations
+
+registry:
+  model_name: diabetic-ulcer-classifier
+  stages:
+    - staging
+    - production
+  transition_rules:
+    staging_to_prod:
+      min_accuracy: 0.92
+      min_auc: 0.90
