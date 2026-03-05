@@ -1,49 +1,43 @@
 import logging
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import make_asgi_app
+from app.database import Base, engine
+from app.config import settings
+from app.auth.auth_router import router as auth_router
+from app.routes import health, predict, upload, reports, patients, patient_progression
+from app import models
 
-from app.api.router import api_router
-from app.core.config import settings
-from app.db.database import Base, engine
-from app.db import models  # noqa: F401
-
-
-def configure_logging() -> None:
-    logging.basicConfig(
-        level=getattr(logging, settings.log_level.upper(), logging.INFO),
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    )
-
-
-configure_logging()
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+Base.metadata.create_all(bind=engine)
 
-def create_database_tables() -> None:
-    Base.metadata.create_all(bind=engine)
-
-
-app = FastAPI(title=settings.app_name, version=settings.app_version)
-
+app = FastAPI(title="Diabetic Ulcer Detection API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(api_router)
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    create_database_tables()
-    logger.info("Database tables initialized")
-
+app.include_router(auth_router)
+app.include_router(health.router)
+app.include_router(predict.router)
+app.include_router(upload.router)
+app.include_router(reports.router)
+app.include_router(patients.router)
+app.include_router(patient_progression.router)
 
 @app.get("/")
-async def root() -> dict[str, str]:
-    return {"message": "Diabetic Ulcer AI System running"}
+def root():
+    return {"message": "Diabetic Ulcer Detection API running", "version": "1.0.0"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

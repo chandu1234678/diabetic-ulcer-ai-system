@@ -1,53 +1,26 @@
-"""Validation utilities."""
+from app.config import settings
+import os
 
-import logging
-from typing import Tuple, List
-from PIL import Image
-import re
+def validate_image_extension(filename: str) -> bool:
+    _, ext = os.path.splitext(filename.lower())
+    return ext in settings.allowed_image_extensions
 
-logger = logging.getLogger(__name__)
+def validate_image_size(file_size_bytes: int) -> bool:
+    max_bytes = settings.max_image_size_mb * 1024 * 1024
+    return file_size_bytes <= max_bytes
 
+def validate_clinical_data(age: int, bmi: float, diabetes_duration: int) -> bool:
+    if age < 0 or age > 150:
+        return False
+    if bmi < 10 or bmi > 60:
+        return False
+    if diabetes_duration < 0 or diabetes_duration > 100:
+        return False
+    return True
 
-class InputValidator:
-    """Validated input data."""
-    
-    ALLOWED_IMAGE_FORMATS = {".jpg", ".jpeg", ".png", ".tiff", ".tif"}
-    MIN_IMAGE_SIZE = 100
-    MAX_IMAGE_SIZE = 4096
-    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-    
-    @staticmethod
-    def validate_patient_id(patient_id: str) -> Tuple[bool, str]:
-        """
-        Validate patient ID format.
-        
-        Args:
-            patient_id: Patient ID string
-        
-        Returns:
-            Tuple of (is_valid, message)
-        """
-        if not patient_id:
-            return False, "Patient ID cannot be empty"
-        
-        if len(patient_id) > 50:
-            return False, "Patient ID too long"
-        
-        # Allow alphanumeric and common separators
-        if not re.match(r"^[a-zA-Z0-9\-_]*$", patient_id):
-            return False, "Invalid patient ID format"
-        
-        return True, "Valid"
-    
-    @staticmethod
-    def validate_email(email: str) -> Tuple[bool, str]:
-        """Validate email format."""
-        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        
-        if re.match(pattern, email):
-            return True, "Valid"
-        else:
-            return False, "Invalid email format"
+def validate_infection_signs(infection_signs: str) -> bool:
+    valid_signs = ["none", "mild", "moderate", "severe"]
+    return infection_signs.lower() in valid_signs
     
     @staticmethod
     def validate_phone(phone: str) -> Tuple[bool, str]:
