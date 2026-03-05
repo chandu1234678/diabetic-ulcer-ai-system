@@ -21,63 +21,6 @@ def validate_clinical_data(age: int, bmi: float, diabetes_duration: int) -> bool
 def validate_infection_signs(infection_signs: str) -> bool:
     valid_signs = ["none", "mild", "moderate", "severe"]
     return infection_signs.lower() in valid_signs
-    
-    @staticmethod
-    def validate_phone(phone: str) -> Tuple[bool, str]:
-        """Validate phone number format."""
-        # Accept various phone formats
-        pattern = r"^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
-        
-        if re.match(pattern, phone.replace(" ", "")):
-            return True, "Valid"
-        else:
-            return False, "Invalid phone format"
-    
-    @staticmethod
-    def validate_image_file(
-        filename: str,
-        file_size: int
-    ) -> Tuple[bool, str]:
-        """
-        Validate image file.
-        
-        Args:
-            filename: Image filename
-            file_size: File size in bytes
-        
-        Returns:
-            Tuple of (is_valid, message)
-        """
-        # Check extension
-        ext = "." + filename.split(".")[-1].lower()
-        if ext not in InputValidator.ALLOWED_IMAGE_FORMATS:
-            return False, f"Invalid format. Allowed: {InputValidator.ALLOWED_IMAGE_FORMATS}"
-        
-        # Check file size
-        if file_size > InputValidator.MAX_FILE_SIZE:
-            return False, f"File too large. Max: {InputValidator.MAX_FILE_SIZE / 1024 / 1024}MB"
-        
-        return True, "Valid"
-    
-    @staticmethod
-    def validate_image_dimensions(
-        image: Image.Image
-    ) -> Tuple[bool, str]:
-        """
-        Validate image dimensions.
-        
-        Args:
-            image: PIL Image
-        
-        Returns:
-            Tuple of (is_valid, message)
-        """
-        width, height = image.size
-        
-        if width < InputValidator.MIN_IMAGE_SIZE or height < InputValidator.MIN_IMAGE_SIZE:
-            return False, f"Image too small. Min: {InputValidator.MIN_IMAGE_SIZE}x{InputValidator.MIN_IMAGE_SIZE}"
-        
-        if width > InputValidator.MAX_IMAGE_SIZE or height > InputValidator.MAX_IMAGE_SIZE:
             return False, f"Image too large. Max: {InputValidator.MAX_IMAGE_SIZE}x{InputValidator.MAX_IMAGE_SIZE}"
         
         # Check aspect ratio
