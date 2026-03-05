@@ -1,5 +1,4 @@
 import numpy as np
-import shap
 import torch
 
 class ShapExplainer:
@@ -9,6 +8,7 @@ class ShapExplainer:
         self.num_background_samples = num_background_samples
     
     def explain_clinical_features(self, clinical_data, feature_names):
+        import shap
         explainer = shap.KernelExplainer(
             self._predict_fn,
             np.random.randn(self.num_background_samples, clinical_data.shape[1])

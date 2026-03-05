@@ -1,5 +1,6 @@
 from app.config import settings
 import os
+from typing import Tuple, List
 
 def validate_image_extension(filename: str) -> bool:
     _, ext = os.path.splitext(filename.lower())
@@ -21,15 +22,13 @@ def validate_clinical_data(age: int, bmi: float, diabetes_duration: int) -> bool
 def validate_infection_signs(infection_signs: str) -> bool:
     valid_signs = ["none", "mild", "moderate", "severe"]
     return infection_signs.lower() in valid_signs
-            return False, f"Image too large. Max: {InputValidator.MAX_IMAGE_SIZE}x{InputValidator.MAX_IMAGE_SIZE}"
-        
-        # Check aspect ratio
-        aspect_ratio = max(width, height) / min(width, height)
-        if aspect_ratio > 3:
-            return False, "Invalid aspect ratio (too extreme)"
-        
-        return True, "Valid"
-    
+
+
+class InputValidator:
+    """Validate input data."""
+
+    MAX_IMAGE_SIZE = 4096
+
     @staticmethod
     def validate_confidence_score(score: float) -> Tuple[bool, str]:
         """Validate confidence score."""
