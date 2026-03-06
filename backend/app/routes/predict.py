@@ -11,7 +11,7 @@ import time
 
 router = APIRouter(prefix="/predict", tags=["prediction"])
 
-@router.post("/", response_model=PredictionResponse)
+@router.post("", response_model=PredictionResponse)
 async def predict(request: PredictionRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     start_time = time.time()
     

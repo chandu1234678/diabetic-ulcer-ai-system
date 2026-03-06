@@ -105,6 +105,11 @@ export default function History({ onLogout }) {
     toggleDarkMode(newMode)
   }
 
+  const handleLogout = () => {
+    if (onLogout) onLogout()
+    navigate('/login', { replace: true })
+  }
+
   const filteredHistory = sampleHistory.filter((entry) => {
     const matchesRisk = filterRisk === 'all' || entry.riskLevel === filterRisk
     const matchesSearch =
@@ -166,7 +171,7 @@ export default function History({ onLogout }) {
               ← Back to Analysis
             </button>
             <button
-              onClick={onLogout}
+              onClick={handleLogout}
               className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
               Logout

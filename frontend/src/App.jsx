@@ -28,6 +28,8 @@ function App() {
       login: () => setIsAuthenticated(true),
       logout: () => {
         localStorage.removeItem('access_token')
+        localStorage.removeItem('user_data')
+        localStorage.removeItem('patient_profile')
         setIsAuthenticated(false)
       },
     }),
@@ -80,7 +82,7 @@ function App() {
         path="/dashboard"
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <Dashboard />
+            <Dashboard onLogout={authApi.logout} />
           </ProtectedRoute>
         }
       />
@@ -88,7 +90,7 @@ function App() {
         path="/foot-scan-analysis"
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <FootScanAnalysis />
+            <FootScanAnalysis onLogout={authApi.logout} />
           </ProtectedRoute>
         }
       />
@@ -96,7 +98,7 @@ function App() {
         path="/scan-results"
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <ScanResults />
+            <ScanResults onLogout={authApi.logout} />
           </ProtectedRoute>
         }
       />
@@ -104,7 +106,7 @@ function App() {
         path="/account-settings"
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <AccountSettings />
+            <AccountSettings onLogout={authApi.logout} />
           </ProtectedRoute>
         }
       />

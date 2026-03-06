@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { uploadImage, predict, logout } from '../services/api'
 
-export default function FootScanAnalysis() {
+export default function FootScanAnalysis({ onLogout }) {
   const navigate = useNavigate()
   const [uploadedImage, setUploadedImage] = useState(null)
   const [previewImage, setPreviewImage] = useState(null)
   const [activeNav, setActiveNav] = useState('scan')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [error, setError] = useState('')
 
   const handleFileUpload = (file) => {
     if (file && file.type.startsWith('image/')) {
@@ -14,6 +16,7 @@ export default function FootScanAnalysis() {
       reader.onload = (e) => {
         setUploadedImage(file)
         setPreviewImage(e.target.result)
+        setError('')
       }
       reader.readAsDataURL(file)
     }
@@ -30,62 +33,103 @@ export default function FootScanAnalysis() {
     input?.click()
   }
 
-  const handleStartAnalysis = () => {
-    if (uploadedImage && previewImage) {
-      setIsAnalyzing(true)
-      // Simulate analysis and redirect to results
-      setTimeout(() => {
-        setIsAnalyzing(false)
-        navigate('/scan-results', {
-          state: { previewImage }
-        })
-      }, 2000)
+  const handleStartAnalysis = async () => {
+    if (!uploadedImage || !previewImage) {
+      setError('Please upload an image first')
+      return
     }
+
+    setIsAnalyzing(true)
+    setError('')
+
+    try {
+      const uploadResponse = await uploadImage(uploadedImage)
+      const imageUrl = uploadResponse.url
+
+      const patientProfile = JSON.parse(localStorage.getItem('patient_profile') || '{}')
+      
+      const predictionResponse = await predict({
+        image_url: imageUrl,
+        age: patientProfile.age || 45,
+        bmi: patientProfile.bmi || 25,
+        diabetes_duration: patientProfile.diabetes_duration || 5,
+        infection_signs: patientProfile.infection_signs || 'none',
+        patient_id: patientProfile.id || null
+      })
+
+      navigate('/scan-results', {
+        state: { 
+          previewImage,
+          prediction: predictionResponse
+        }
+      })
+    } catch (err) {
+      console.error('Analysis error:', err)
+      setError(err.response?.data?.detail || 'Failed to analyze image. Please try again.')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout()
+    }
+    navigate('/login', { replace: true })
   }
 
   const patientProfile = JSON.parse(localStorage.getItem('patient_profile') || '{}')
   const userName = patientProfile.full_name || 'Alex Johnson'
 
   return (
-    <div className="min-h-screen flex flex-col bg-light">
+    <div className="min-h-screen flex flex-col bg-background-light text-slate-900 font-display">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
         <div className="flex h-16 items-center justify-between px-4 lg:px-8">
-          <button 
-            onClick={() => navigate('/dashboard')} 
-            className="flex items-center gap-4 hover:opacity-80 transition-opacity"
-          >
+          <div className="flex items-center gap-4">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-white">
               <span className="material-symbols-outlined">health_metrics</span>
             </div>
-            <h1 className="text-xl font-bold tracking-tight">MedVision AI</h1>
-          </button>
+            <h1 className="text-xl font-bold tracking-tight">HealthScan AI</h1>
+          </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/history')}
+              className="flex size-10 items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+              title="View History"
+            >
+              <span className="material-symbols-outlined text-slate-600">history</span>
+            </button>
             <button className="flex size-10 items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
               <span className="material-symbols-outlined text-slate-600">notifications</span>
             </button>
             <div className="h-8 w-px bg-slate-200"></div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              title="Logout"
+            >
+              <span className="material-symbols-outlined text-base">logout</span>
+              <span className="hidden sm:inline">Logout</span>
+            </button>
             <div className="flex items-center gap-3 pl-2">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-slate-900">{userName}</p>
+                <p className="text-sm font-semibold">{userName}</p>
                 <p className="text-xs text-slate-500">Premium Member</p>
               </div>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="size-10 rounded-full border-2 border-primary/20 hover:border-primary/50 overflow-hidden flex items-center justify-center bg-slate-200"
-              >
+              <div className="size-10 rounded-full border-2 border-primary/20 overflow-hidden">
                 <img
-                  alt="Profile"
                   className="h-full w-full object-cover"
+                  alt="User profile avatar"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgKFZ3-0WTUhN7tWkpJxVUxE3Bv8oIKMLrHqq30LW_R1rbpXUI8QFBeI1pHpJbeGwnbT0Gue3XNusn-dFKRq3VDRU9VW_OO87v6PJZ5uE-SxnhujWj6g3-pttFOUt9WhkLCV14lzJX0r25oFF-K2NjHcO4tCInRzCEUfJ-iGVG5UsurmaSyFl1mx47tvyy205CFHyy4chetFNBM746uuSo80k76MRH5Jpjrgyz9zZiWR3qvyZvIZf9WBGkeeSKEcq5jJZ1tGlS3D0"
                 />
-              </button>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-[calc(100vh-4rem)]">
+      <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Sidebar */}
         <aside className="hidden lg:flex w-64 flex-col border-r border-slate-200 bg-white p-6">
           <nav className="flex flex-col gap-2">
@@ -103,7 +147,10 @@ export default function FootScanAnalysis() {
               <span className="material-symbols-outlined">camera</span>
               <span className="font-medium">New Analysis</span>
             </button>
-            <button className="flex items-center gap-3 rounded-lg px-4 py-3 text-slate-600 hover:bg-slate-100 transition-all text-left">
+            <button
+              onClick={() => navigate('/history')}
+              className="flex items-center gap-3 rounded-lg px-4 py-3 text-slate-600 hover:bg-slate-100 transition-all text-left"
+            >
               <span className="material-symbols-outlined">history</span>
               <span className="font-medium">History</span>
             </button>
@@ -134,9 +181,10 @@ export default function FootScanAnalysis() {
               {/* Uploader Section */}
               <div className="lg:col-span-8">
                 <div
+                  className="rounded-xl border-2 border-dashed border-primary/30 bg-white p-12 transition-all hover:border-primary/60 hover:shadow-xl hover:shadow-primary/5 cursor-pointer"
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDragDrop}
-                  className="rounded-xl border-2 border-dashed border-primary/30 bg-white p-12 transition-all hover:border-primary/60 hover:shadow-xl hover:shadow-primary/5 cursor-pointer"
+                  onClick={handleBrowseClick}
                 >
                   <div className="flex flex-col items-center justify-center text-center">
                     <div className="mb-6 flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -145,6 +193,7 @@ export default function FootScanAnalysis() {
                     <h3 className="mb-2 text-xl font-bold text-slate-900">Drag and drop your image</h3>
                     <p className="mb-8 text-slate-500">Supports JPG, PNG (Max 10MB)</p>
                     <button
+                      type="button"
                       onClick={handleBrowseClick}
                       className="rounded-full bg-primary px-8 py-3 font-bold text-white shadow-lg shadow-primary/30 transition-transform hover:bg-primary/90 active:scale-95"
                     >
@@ -155,7 +204,7 @@ export default function FootScanAnalysis() {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                      onChange={(e) => handleFileUpload(e.target.files?.[0])}
                     />
                   </div>
                 </div>
@@ -163,21 +212,21 @@ export default function FootScanAnalysis() {
                 {/* Analysis Instructions */}
                 <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200">
-                    <span className="material-symbols-outlined text-primary">light_mode</span>
+                    <span className="material-symbols-outlined text-primary flex-shrink-0">light_mode</span>
                     <div>
                       <p className="text-sm font-bold text-slate-900">Good Lighting</p>
                       <p className="text-xs text-slate-500">Ensure area is well-lit</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200">
-                    <span className="material-symbols-outlined text-primary">center_focus_strong</span>
+                    <span className="material-symbols-outlined text-primary flex-shrink-0">center_focus_strong</span>
                     <div>
                       <p className="text-sm font-bold text-slate-900">Clear Focus</p>
                       <p className="text-xs text-slate-500">Keep camera steady</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200">
-                    <span className="material-symbols-outlined text-primary">straighten</span>
+                    <span className="material-symbols-outlined text-primary flex-shrink-0">straighten</span>
                     <div>
                       <p className="text-sm font-bold text-slate-900">Angle</p>
                       <p className="text-xs text-slate-500">Top or side views</p>
@@ -212,9 +261,13 @@ export default function FootScanAnalysis() {
                     <button
                       onClick={handleStartAnalysis}
                       disabled={!uploadedImage || isAnalyzing}
-                      className="mt-6 w-full rounded-xl bg-primary py-4 font-bold text-white shadow-lg shadow-primary/30 transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`mt-6 w-full rounded-xl py-4 font-bold text-white shadow-lg shadow-primary/30 transition-all flex items-center justify-center gap-2 ${
+                        isAnalyzing || !uploadedImage
+                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed opacity-50'
+                          : 'bg-primary hover:bg-primary/90'
+                      }`}
                     >
-                      {isAnalyzing ? 'Analyzing...' : 'Start Analysis'}
+                      <span>{isAnalyzing ? 'Analyzing...' : 'Start Analysis'}</span>
                     </button>
                     <p className="mt-3 text-center text-xs text-slate-400">
                       By clicking "Start Analysis", you agree to our <a className="underline hover:text-primary transition-colors" href="#">Terms of Service</a>.
@@ -222,7 +275,7 @@ export default function FootScanAnalysis() {
                   </div>
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                     <div className="flex gap-3 text-primary">
-                      <span className="material-symbols-outlined">info</span>
+                      <span className="material-symbols-outlined flex-shrink-0">info</span>
                       <p className="text-xs font-medium leading-relaxed">
                         Your data is encrypted. We do not store identifiable biometric data unless you choose to save it to your records.
                       </p>
@@ -252,7 +305,10 @@ export default function FootScanAnalysis() {
             <span className="material-symbols-outlined">camera</span>
             <span className="text-[10px] font-bold">Scan</span>
           </button>
-          <button className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-900 transition-colors">
+          <button
+            onClick={() => navigate('/history')}
+            className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-900 transition-colors"
+          >
             <span className="material-symbols-outlined">history</span>
             <span className="text-[10px] font-bold">History</span>
           </button>
@@ -264,12 +320,12 @@ export default function FootScanAnalysis() {
       </nav>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-12 px-4 lg:px-8 mb-20 lg:mb-0">
+      <footer className="lg:hidden border-t border-slate-200 bg-white py-12 px-4 mb-20">
         <div className="mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <span className="material-symbols-outlined text-primary">health_metrics</span>
-              <span className="text-lg font-bold text-slate-900">MedVision AI</span>
+              <span className="text-lg font-bold">HealthScan AI</span>
             </div>
             <p className="text-slate-500 max-w-sm">
               Advanced podiatry analysis powered by artificial intelligence. Supporting your mobility through proactive screening.
@@ -293,9 +349,15 @@ export default function FootScanAnalysis() {
           </div>
         </div>
         <div className="mx-auto max-w-7xl mt-12 pt-8 border-t border-slate-100 text-center text-xs text-slate-400">
-          <p>© 2024 MedVision AI. This tool is for screening purposes and not a substitute for professional medical advice.</p>
+          <p>© 2024 HealthScan AI. This tool is for screening purposes and not a substitute for professional medical advice.</p>
         </div>
       </footer>
+
+      {error && (
+        <div className="fixed bottom-32 left-4 right-4 max-w-sm mx-auto p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
     </div>
   )
 }

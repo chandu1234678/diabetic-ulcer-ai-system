@@ -5,6 +5,7 @@ from app.models import User
 from app.schemas import UserCreate, UserLogin, TokenResponse, UserForgotPassword, UserResetPassword
 from app.auth.password_utils import hash_password, verify_password
 from app.auth.jwt_handler import create_access_token
+from app.auth.dependencies import get_current_user
 from app.auth.password_reset_handler import (
     generate_password_reset_token,
     verify_password_reset_token,
@@ -32,12 +33,36 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user or not verify_password(user.password, db_user.hashed_password):
+    
+    if not db_user:
+        # Log for debugging
+        import sys
+        print(f"User not found: {user.email}", file=sys.stderr)
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Verify password with detailed logging
+    password_valid = verify_password(user.password, db_user.hashed_password)
+    
+    if not password_valid:
+        # Log for debugging
+        import sys
+        print(f"Password mismatch for user: {user.email}", file=sys.stderr)
+        print(f"Stored hash: {db_user.hashed_password[:50]}...", file=sys.stderr)
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     access_token = create_access_token(data={"sub": db_user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+@router.get("/me", response_model=dict)
+def get_current_user_info(user: User = Depends(get_current_user)):
+    """Get current authenticated user info."""
+    return {
+        "id": user.id,
+        "email": user.email,
+        "is_active": user.is_active,
+        "created_at": user.created_at
+    }
 
 @router.post("/forgot-password")
 def forgot_password(request: UserForgotPassword, db: Session = Depends(get_db)):
@@ -46,9 +71,19 @@ def forgot_password(request: UserForgotPassword, db: Session = Depends(get_db)):
     """
     user = db.query(User).filter(User.email == request.email).first()
     
+    # Always return same message for security
+    base_message = "If an account exists with this email, a password reset link will be sent."
+    
     if not user:
-        # Don't reveal if email exists or not for security
-        return {"message": "If an account exists with this email, a password reset link will be sent."}
+        # For development: still return the base message but skip token generation
+        from app.config import settings
+        if settings.environment == "development" and not settings.smtp_username:
+            return {
+                "message": base_message,
+                "reset_link": None,
+                "note": "User email not found in database"
+            }
+        return {"message": base_message}
     
     # Generate reset token
     reset_token = generate_password_reset_token(user.email)
@@ -61,6 +96,17 @@ def forgot_password(request: UserForgotPassword, db: Session = Depends(get_db)):
             status_code=500,
             detail="Failed to send password reset email. Please try again later."
         )
+    
+    from app.config import settings
+    reset_link = f"{settings.frontend_url}/reset-password?token={reset_token}"
+    
+    # In development without SMTP, return the link
+    if settings.environment == "development" and not settings.smtp_username:
+        return {
+            "message": base_message,
+            "reset_link": reset_link,
+            "note": "[DEV MODE] Reset link generated (no email sent). Copy the link above to reset password."
+        }
     
     return {"message": "Password reset email sent successfully"}
 

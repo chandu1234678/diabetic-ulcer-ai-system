@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { applyDarkMode, toggleDarkMode } from '../utils/darkMode'
+import { logout } from '../services/api'
 
-export default function AccountSettings() {
+export default function AccountSettings({ onLogout }) {
   const navigate = useNavigate()
   const [darkMode, setDarkMode] = useState(false)
   const [emailNotif, setEmailNotif] = useState(true)
@@ -73,8 +74,9 @@ export default function AccountSettings() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('patient_profile')
+    if (onLogout) {
+      onLogout()
+    }
     navigate('/login', { replace: true })
   }
 

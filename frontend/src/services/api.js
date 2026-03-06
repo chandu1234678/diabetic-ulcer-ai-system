@@ -14,21 +14,8 @@ api.interceptors.request.use((config) => {
 })
 
 export async function login(payload) {
-  try {
-    const { data } = await api.post('/auth/login', payload)
-    return data
-  } catch {
-    // Fallback for local demo: allow login without backend auth endpoint.
-    return { 
-      access_token: 'local-dev-token',
-      user: {
-        email: payload.email,
-        full_name: payload.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        role: 'Patient',
-        member_since: 'May 2023'
-      }
-    }
-  }
+  const { data } = await api.post('/auth/login', payload)
+  return data
 }
 
 export async function register(payload) {
@@ -40,9 +27,7 @@ export async function uploadImage(file) {
   const formData = new FormData()
   formData.append('file', file)
 
-  const { data } = await api.post('/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
+  const { data } = await api.post('/upload', formData)
   return data
 }
 
@@ -70,4 +55,10 @@ export async function requestPasswordReset(payload) {
 export async function resetPassword(payload) {
   const { data } = await api.post('/auth/reset-password', payload)
   return data
+}
+
+export function logout() {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('user_data')
+  localStorage.removeItem('patient_profile')
 }

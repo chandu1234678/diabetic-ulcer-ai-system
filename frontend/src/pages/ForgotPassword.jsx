@@ -8,19 +8,36 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [resetLink, setResetLink] = useState('')
+  const [devNote, setDevNote] = useState('')
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     setLoading(true)
     setError('')
+    setResetLink('')
+    setDevNote('')
 
     try {
-      await requestPasswordReset({ email })
+      const response = await requestPasswordReset({ email })
       setSuccess(true)
+      
+      // If response contains reset link (development mode)
+      if (response.reset_link) {
+        setResetLink(response.reset_link)
+        setDevNote(response.note || '')
+      }
     } catch {
       setError('Unable to send reset email. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCopyLink = () => {
+    if (resetLink) {
+      navigator.clipboard.writeText(resetLink)
+      alert('Reset link copied to clipboard!')
     }
   }
 
@@ -55,9 +72,35 @@ export default function ForgotPassword() {
             {error && <p className="text-sm text-red-600">{error}</p>}
 
             {success && (
-              <p className="text-sm text-green-700">
-                If this email exists, a reset link has been sent. Check inbox and spam folder.
-              </p>
+              <div className="space-y-4">
+                <p className="text-sm text-green-700 font-medium">
+                  ✓ If this email exists, a reset link has been sent. Check inbox and spam folder.
+                </p>
+                
+                {resetLink && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                    <p className="text-sm font-semibold text-blue-900">{devNote}</p>
+                    <div className="bg-white p-3 rounded border border-blue-200 break-all">
+                      <p className="text-xs text-slate-600 mb-2">Reset Link:</p>
+                      <p className="text-xs font-mono text-blue-600">{resetLink}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white transition-all hover:bg-blue-700 text-sm"
+                    >
+                      Copy Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/reset-password?token=${resetLink.split('token=')[1]}`)}
+                      className="w-full rounded-lg bg-green-600 py-2 font-semibold text-white transition-all hover:bg-green-700 text-sm"
+                    >
+                      Go to Reset Password
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             <button

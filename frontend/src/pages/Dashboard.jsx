@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { applyDarkMode, toggleDarkMode } from '../utils/darkMode'
+import { logout } from '../services/api'
 
-export default function Dashboard() {
+export default function Dashboard({ onLogout }) {
   const navigate = useNavigate()
   const profileMenuRef = useRef(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -48,8 +49,10 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     setShowProfileMenu(false)
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('patient_profile')
+    if (onLogout) {
+      onLogout()
+    }
+    logout()
     navigate('/login', { replace: true })
   }
 

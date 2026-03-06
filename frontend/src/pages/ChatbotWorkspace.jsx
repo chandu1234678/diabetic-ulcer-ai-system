@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import ChatbotPanel from '../components/ChatbotPanel'
 import { predict, uploadImage } from '../services/api'
 import { applyDarkMode } from '../utils/darkMode'
 
 export default function ChatbotWorkspace({ onLogout }) {
+  const navigate = useNavigate()
   const [selectedFile, setSelectedFile] = useState(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState('')
@@ -50,6 +52,11 @@ export default function ChatbotWorkspace({ onLogout }) {
     handleFile(event.dataTransfer.files?.[0])
   }
 
+  const handleLogout = () => {
+    if (onLogout) onLogout()
+    navigate('/login', { replace: true })
+  }
+
   const riskLevel = result?.prediction?.risk_level || 'High Risk'
   const confidence = result?.prediction?.confidence
     ? `${(result.prediction.confidence * 100).toFixed(1)}%`
@@ -73,7 +80,7 @@ export default function ChatbotWorkspace({ onLogout }) {
               📊 History
             </a>
             <button
-              onClick={onLogout}
+              onClick={handleLogout}
               className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
               Logout

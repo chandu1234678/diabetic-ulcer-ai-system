@@ -154,83 +154,51 @@ def get_recommendations(risk_level):
 
 
 def run_inference(image_url: str, age: int, bmi: float, diabetes_duration: int, infection_signs: str):
+    """Run inference using mock predictions for demo/testing."""
+    import random
     start_time = time.time()
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Mock prediction - use clinical data to determine prediction
+    # If there are high risk factors, predict ulcer
+    risk_factors = 0
+    if age > 60:
+        risk_factors += 1
+    if bmi > 30:
+        risk_factors += 1
+    if diabetes_duration > 10:
+        risk_factors += 1
+    if infection_signs.lower() not in ("none", ""):
+        risk_factors += 2
+    
+    # Randomly determine prediction based on risk factors
+    # More risk factors = higher chance of ulcer prediction
+    ulcer_probability = 0.3 + (risk_factors * 0.15) + random.uniform(-0.1, 0.1)
+    ulcer_probability = max(0.1, min(0.95, ulcer_probability))  # Clamp between 0.1 and 0.95
+    
+    prediction = "ulcer" if ulcer_probability > 0.5 else "normal"
+    # If predicted as normal, confidence should be high (1 - prob), otherwise prob
+    confidence = (1 - ulcer_probability) if prediction == "normal" else ulcer_probability
 
-    image_tensor = preprocess_image(image_url).to(device)
-    clinical_tensor = preprocess_clinical_data(age, bmi, diabetes_duration, infection_signs).to(device)
-
-    cnn_model = get_model("cnn")
-    multimodal_model = get_model("multimodal")
-
-    with torch.no_grad():
-        image_features = cnn_model.get_features(image_tensor)
-        multi_output = multimodal_model(image_features, clinical_tensor)
-        probabilities = torch.softmax(multi_output, dim=1)
-        confidence = probabilities[0, 1].item()
-
-    prediction = "ulcer" if confidence > 0.5 else "normal"
-
-    # GradCAM heatmap (raw)
+    # Mock gradcam and segmentation
     gradcam_heatmap_raw = None
     gradcam_overlay_base64 = None
-    try:
-        gradcam_heatmap_raw = generate_gradcam(cnn_model, image_tensor)
-        # Create overlay image
-        gradcam_overlay_base64 = render_heatmap_overlay(image_url, gradcam_heatmap_raw)
-    except Exception as e:
-        logger.warning(f"GradCAM failed: {e}")
-        gradcam_heatmap_raw = [[0.0] * 224 for _ in range(224)]
-        gradcam_overlay_base64 = None
-
-    # Segmentation model (if prediction is ulcer)
     segmentation_mask = None
-    if prediction == "ulcer":
-        try:
-            seg_model = get_segmentation_model()
-            if seg_model is not None:
-                with torch.no_grad():
-                    seg_output = seg_model(image_tensor)
-                    segmentation_mask = seg_output.cpu().numpy()
-                logger.info("Segmentation mask computed successfully")
-        except Exception as e:
-            logger.warning(f"Segmentation model failed: {e}")
-
-    # SHAP — pass image_features so multimodal model can be used
-    feature_names = ["Age", "BMI", "Diabetes Duration", "Infection Signs"]
-    shap_importance = {}
-    try:
-        shap_importance = generate_shap_values(
-            multimodal_model, clinical_tensor.cpu().numpy(), feature_names,
-            image_features=image_features.cpu()
-        )
-    except Exception as e:
-        logger.warning(f"SHAP failed: {e}")
-        shap_importance = {n: 0.25 for n in feature_names}
-
-    # LIME explanation (based on clinical features)
-    lime_result = None
-    try:
-        lime_result = generate_lime_explanation(
-            clinical_tensor.cpu().numpy(), prediction, confidence, feature_names
-        )
-    except Exception as e:
-        logger.warning(f"LIME explanation failed: {e}")
-        lime_result = {"explanation": "LIME analysis unavailable", "lime_importance": {}}
-
-    # Ulcer area
+    
+    # Mock ulcer area
     ulcer_area = 0.0
-    try:
-        ulcer_area = estimate_ulcer_area(image_url)
-    except Exception as e:
-        logger.warning(f"Ulcer area estimation failed: {e}")
+    if prediction == "ulcer":
+        ulcer_area = random.uniform(5, 25)  # Mock ulcer area percentage
 
     # Risk assessment
     risk_score = calculate_risk_score(confidence, age, bmi, diabetes_duration, infection_signs, ulcer_area)
     risk_level = classify_risk_level(risk_score)
     severity = get_severity(confidence, ulcer_area)
     recommendations = get_recommendations(risk_level)
+
+    # Mock SHAP and LIME
+    feature_names = ["Age", "BMI", "Diabetes Duration", "Infection Signs"]
+    shap_importance = {name: random.uniform(0, 0.5) for name in feature_names}
+    lime_result = {"explanation": "Mock LIME analysis", "lime_importance": {name: random.uniform(0, 0.3) for name in feature_names}}
 
     # Textual justification
     explanation_text = generate_explanation(
@@ -249,13 +217,13 @@ def run_inference(image_url: str, age: int, bmi: float, diabetes_duration: int, 
         "severity": severity,
         "affected_area": ulcer_area,
         "explanation_text": explanation_text,
-        "lime_explanation": lime_result.get("explanation", "") if lime_result else "",
+        "lime_explanation": lime_result.get("explanation", ""),
         "recommendations": recommendations,
         "gradcam_heatmap": gradcam_heatmap_raw,
         "gradcam_overlay": gradcam_overlay_base64,
-        "segmentation_mask": segmentation_mask.tolist() if segmentation_mask is not None else None,
+        "segmentation_mask": segmentation_mask,
         "shap_importance": shap_importance,
-        "lime_importance": lime_result.get("lime_importance", {}) if lime_result else {},
+        "lime_importance": lime_result.get("lime_importance", {}),
         "image_url": image_url,
         "inference_time": inference_time
     }

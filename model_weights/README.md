@@ -58,7 +58,7 @@ python scripts/generate_shap_values.py --image-dir datasets/images/ulcers \
 
 ```python
 import torch
-from app.models.load_model import load_cnn_model
+from app.ml_models.load_model import load_cnn_model
 
 model = load_cnn_model("model_weights/cnn_ulcer_model.pth")
 model.eval()

@@ -1,7 +1,8 @@
 """Application settings and configuration."""
 
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, List, Union
+from pydantic import validator
 
 
 class Settings(BaseSettings):
@@ -23,9 +24,28 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-change-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-    
+
+    # Legacy/alternate JWT env vars (ignored or used when provided)
+    jwt_secret_key: Optional[str] = None
+    jwt_algorithm: Optional[str] = None
+
     # CORS
-    allowed_origins: list = ["http://localhost:3000", "http://localhost:8000"]
+    allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    cors_origins: Optional[Union[str, List[str]]] = None
+
+    # Validators
+    @validator("allowed_origins", pre=True)
+    def _parse_allowed_origins(cls, v):
+        """Allow comma-separated string in environment variable."""
+        if isinstance(v, str):
+            return [item.strip() for item in v.split(",") if item.strip()]
+        return v
+
+    @validator("cors_origins", pre=True)
+    def _parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            return [item.strip() for item in v.split(",") if item.strip()]
+        return v
     
     # Model paths
     cnn_model_path: str = "../model_weights/cnn_ulcer_model.pth"
@@ -53,6 +73,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # ignore unrelated env vars (e.g., host, port from uvicorn)
 
 
 # Global settings instance
