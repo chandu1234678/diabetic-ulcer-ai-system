@@ -19,7 +19,8 @@ function ProtectedRoute({ isAuthenticated, children }) {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
-    Boolean(localStorage.getItem('access_token')),
+    Boolean(localStorage.getItem('access_token'))
+  )
   return (
     <Routes>
       <Route path="/login" element={<Login onLogin={authApi.login} />} />
@@ -36,22 +37,6 @@ function App() {
       <Route path="/image-analysis" element={<Navigate to="/chatbot" replace />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  )
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/image-analysis"
-        element={<Navigate to="/chatbot" replace />}
-      />
-      <Route
-        path="/"
-        element={
-          <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
