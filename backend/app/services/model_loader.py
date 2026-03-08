@@ -19,12 +19,12 @@ def load_cnn_model():
     
     model = create_model(num_classes=2, pretrained=True)
     
-    if os.path.exists(settings.model_path):
+    if os.path.exists(settings.cnn_model_path):
         try:
-            checkpoint = torch.load(settings.model_path, map_location='cpu')
+            checkpoint = torch.load(settings.cnn_model_path, map_location='cpu')
             model.load_state_dict(checkpoint)
         except:
-            logger.warning(f"Could not load checkpoint from {settings.model_path}, using pretrained")
+            logger.warning(f"Could not load checkpoint from {settings.cnn_model_path}, using pretrained")
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)

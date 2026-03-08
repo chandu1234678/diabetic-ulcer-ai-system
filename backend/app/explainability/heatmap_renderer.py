@@ -5,6 +5,7 @@ import base64
 import io
 from PIL import Image
 from typing import Union, Tuple
+import os
 
 
 def render_heatmap_overlay(
@@ -25,6 +26,12 @@ def render_heatmap_overlay(
     Returns:
         Base64 encoded image string of the overlay
     """
+    # Handle local uploads
+    if original_image_path.startswith('/uploads/'):
+        filename = original_image_path.split('/')[-1]
+        upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'uploads')
+        original_image_path = os.path.join(upload_dir, filename)
+    
     # Load original image
     if original_image_path.startswith(('http://', 'https://')):
         import requests

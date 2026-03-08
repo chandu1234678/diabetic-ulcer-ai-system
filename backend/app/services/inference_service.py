@@ -158,6 +158,17 @@ def run_inference(image_url: str, age: int, bmi: float, diabetes_duration: int, 
     import random
     start_time = time.time()
 
+    # Load model
+    model = get_model()
+    device = next(model.parameters()).device
+
+    # Preprocess image
+    try:
+        input_tensor = preprocess_image(image_url).to(device)
+    except Exception as e:
+        logger.error(f"Failed to preprocess image {image_url}: {e}")
+        input_tensor = None
+
     # Mock prediction - use clinical data to determine prediction
     # If there are high risk factors, predict ulcer
     risk_factors = 0
@@ -179,10 +190,42 @@ def run_inference(image_url: str, age: int, bmi: float, diabetes_duration: int, 
     # If predicted as normal, confidence should be high (1 - prob), otherwise prob
     confidence = (1 - ulcer_probability) if prediction == "normal" else ulcer_probability
 
-    # Mock gradcam and segmentation
+    # Generate GradCAM if model and input available
     gradcam_heatmap_raw = None
     gradcam_overlay_base64 = None
+    if input_tensor is not None and model is not None:
+        try:
+            # Get prediction from model
+            with torch.no_grad():
+                outputs = model(input_tensor)
+                predicted_class = outputs.argmax(dim=1).item()
+                confidence = torch.softmax(outputs, dim=1)[0, predicted_class].item()
+                prediction = "ulcer" if predicted_class == 1 else "normal"
+            
+            # Generate GradCAM heatmap
+            gradcam_heatmap_raw = generate_gradcam(model, input_tensor)
+            
+            # Render overlay
+            gradcam_overlay_base64 = render_heatmap_overlay(image_url, gradcam_heatmap_raw)
+        except Exception as e:
+            logger.error(f"Failed to generate GradCAM: {e}")
+    
     segmentation_mask = None
+    
+    # Mock ulcer area
+    ulcer_area = 0.0
+    if prediction == "ulcer":
+        ulcer_area = random.uniform(5, 25)  # Mock ulcer area percentage
+
+    # Risk assessment
+    risk_score = calculate_risk_score(confidence, age, bmi, diabetes_duration, infection_signs, ulcer_area)
+    risk_level = classify_risk_level(risk_score)
+    severity = get_severity(confidence, ulcer_area)
+    recommendations = get_recommendations(risk_level)
+
+    # Mock SHAP and LIME
+    feature_names = ["Age", "BMI", "Diabetes Duration", "Infection Signs"]
+    shap_importance = {name: random.uniform(0, 0.5) for name in feature_names}
     
     # Mock ulcer area
     ulcer_area = 0.0

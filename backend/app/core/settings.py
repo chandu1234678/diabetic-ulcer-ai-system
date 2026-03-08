@@ -48,9 +48,9 @@ class Settings(BaseSettings):
         return v
     
     # Model paths
-    cnn_model_path: str = "../model_weights/cnn_ulcer_model.pth"
-    segmentation_model_path: str = "../model_weights/segmentation_model.pth"
-    multimodal_model_path: str = "../model_weights/multimodal_model.pth"
+    cnn_model_path: str = "../models/cnn_ulcer_model.pth"
+    segmentation_model_path: str = "../../model_weights/segmentation_model.pth"
+    multimodal_model_path: str = "../../model_weights/multimodal_model.pth"
     
     # Explainability settings
     shap_background_samples: int = 100

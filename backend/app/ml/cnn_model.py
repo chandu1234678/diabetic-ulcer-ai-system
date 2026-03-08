@@ -1,12 +1,18 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from torchvision.models import resnet18, ResNet18_Weights
 
 class UlcerCNNModel(nn.Module):
     def __init__(self, num_classes=2, pretrained=True):
         super(UlcerCNNModel, self).__init__()
         
-        self.resnet = models.resnet50(pretrained=pretrained)
+        if pretrained:
+            weights = ResNet18_Weights.DEFAULT
+        else:
+            weights = None
+        
+        self.resnet = resnet18(weights=weights)
         num_ftrs = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(num_ftrs, num_classes)
         

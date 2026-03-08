@@ -13,6 +13,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 import time
 
+
 # Add backend to path so we can import app modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,10 +25,11 @@ def train():
     # --- Config ---
     DATASET_PATH = os.path.join(os.path.dirname(__file__), "..", "datasets", "images")
     MODEL_SAVE_PATH = os.path.join(os.path.dirname(__file__), "models")
-    EPOCHS = 50
+    EPOCHS = 15
     BATCH_SIZE = 16
-    LEARNING_RATE = 0.001
+    LEARNING_RATE = 0.0003
     TEST_SPLIT = 0.2
+    PATIENCE = 5  # Early stopping patience
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -55,7 +57,7 @@ def train():
     # --- Create Model ---
     model = create_model(num_classes=2, pretrained=True)
     model = model.to(device)
-    print("Model: ResNet50 (pretrained) with 2-class head")
+    print("Model: ResNet18 (pretrained) with 2-class head")
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -63,6 +65,7 @@ def train():
 
     # --- Training Loop ---
     best_accuracy = 0.0
+    patience_counter = 0
     os.makedirs(MODEL_SAVE_PATH, exist_ok=True)
 
     print(f"\nStarting training for {EPOCHS} epochs...")
@@ -127,16 +130,22 @@ def train():
             f"Time: {elapsed:.1f}s"
         )
 
-        # Save best model
+        # Save best model and check early stopping
         if val_acc > best_accuracy:
             best_accuracy = val_acc
-            save_path = os.path.join(MODEL_SAVE_PATH, "cnn_ulcer_model.pth")
+            save_path = os.path.join(MODEL_SAVE_PATH, "best_dfu_model.pth")
             torch.save(model.state_dict(), save_path)
             print(f"  -> Saved best model (val_acc={val_acc:.1f}%)")
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter >= PATIENCE:
+                print(f"Early stopping at epoch {epoch+1} (no improvement for {PATIENCE} epochs)")
+                break
 
     print("-" * 60)
     print(f"Training complete! Best validation accuracy: {best_accuracy:.1f}%")
-    print(f"Model saved to: {os.path.join(MODEL_SAVE_PATH, 'cnn_ulcer_model.pth')}")
+    print(f"Model saved to: {os.path.join(MODEL_SAVE_PATH, 'best_dfu_model.pth')}")
 
 
 if __name__ == "__main__":
