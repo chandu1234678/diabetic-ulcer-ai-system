@@ -24,6 +24,10 @@ export default function AccountSettings({ onLogout }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [passwordLoading, setPasswordLoading] = useState(false)
 
   const userName = fullName
 
@@ -34,7 +38,7 @@ export default function AccountSettings({ onLogout }) {
     setDarkMode(isDark)
   }, [])
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     setPasswordError('')
     setPasswordSuccess('')
 
@@ -53,20 +57,67 @@ export default function AccountSettings({ onLogout }) {
       return
     }
 
-    // Simulate API call
-    setPasswordSuccess('Password changed successfully!')
-    setTimeout(() => {
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-      setShowPasswordModal(false)
-      setPasswordSuccess('')
-    }, 2000)
+    setPasswordLoading(true)
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      setPasswordSuccess('Password changed successfully!')
+      setTimeout(() => {
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setShowPasswordModal(false)
+        setPasswordSuccess('')
+        setPasswordLoading(false)
+      }, 2000)
+    } catch (err) {
+      setPasswordError('Failed to change password. Please try again.')
+      setPasswordLoading(false)
+    }
   }
 
-  const handleSaveChanges = () => {
-    console.log('Settings saved', { fullName, email, emailNotif, smsNotif, marketingNotif })
-    alert('Settings saved successfully!')
+  const handleSaveChanges = async () => {
+    setSaveError('')
+    setSaveSuccess('')
+
+    if (!fullName.trim()) {
+      setSaveError('Full name is required')
+      return
+    }
+
+    if (!email.trim()) {
+      setSaveError('Email is required')
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setSaveError('Please enter a valid email address')
+      return
+    }
+
+    setIsSaving(true)
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      
+      // Update local storage
+      const userData = JSON.parse(localStorage.getItem('user_data') || '{}')
+      userData.full_name = fullName
+      userData.email = email
+      localStorage.setItem('user_data', JSON.stringify(userData))
+      
+      setSaveSuccess('Settings saved successfully!')
+      setTimeout(() => {
+        setSaveSuccess('')
+        setIsSaving(false)
+      }, 2000)
+    } catch (err) {
+      setSaveError('Failed to save settings. Please try again.')
+      setIsSaving(false)
+    }
   }
 
   const handleCancel = () => {
@@ -320,19 +371,40 @@ export default function AccountSettings({ onLogout }) {
         </section>
 
         {/* Save Changes */}
-        <div className="flex justify-end gap-4 mb-8">
-          <button
-            onClick={handleCancel}
-            className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSaveChanges}
-            className="px-6 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-colors"
-          >
-            Save Changes
-          </button>
+        <div className="space-y-4 mb-8">
+          {saveError && (
+            <div className="flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 p-4">
+              <span className="material-symbols-outlined text-red-600 flex-shrink-0">error</span>
+              <p className="text-sm text-red-700">{saveError}</p>
+            </div>
+          )}
+
+          {saveSuccess && (
+            <div className="flex items-start gap-3 rounded-lg bg-green-50 border border-green-200 p-4">
+              <span className="material-symbols-outlined text-green-600 flex-shrink-0">check_circle</span>
+              <p className="text-sm text-green-700">{saveSuccess}</p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-4">
+            <button
+              onClick={handleCancel}
+              disabled={isSaving}
+              className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+              className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-primary to-[#2575c0] text-white font-semibold hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 relative overflow-hidden"
+            >
+              {isSaving && (
+                <span className="animate-spin material-symbols-outlined text-lg">hourglass_bottom</span>
+              )}
+              <span>{isSaving ? 'Saving...' : saveSuccess ? 'Saved!' : 'Save Changes'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Change Password Modal */}
@@ -413,16 +485,23 @@ export default function AccountSettings({ onLogout }) {
                     setConfirmPassword('')
                     setPasswordError('')
                   }}
-                  className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  disabled={passwordLoading}
+                  className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 font-semibold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleChangePassword}
-                  className="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                  disabled={passwordLoading}
+                  className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-[#2575c0] text-white font-semibold hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 relative overflow-hidden"
                 >
-                  <span className="material-symbols-outlined text-[20px]">check</span>
-                  Update Password
+                  {passwordLoading && (
+                    <span className="animate-spin material-symbols-outlined">hourglass_bottom</span>
+                  )}
+                  {!passwordLoading && (
+                    <span className="material-symbols-outlined text-[20px]">check</span>
+                  )}
+                  <span>{passwordLoading ? 'Updating...' : 'Update Password'}</span>
                 </button>
               </div>
             </div>

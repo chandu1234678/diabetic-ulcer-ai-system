@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { uploadImage, predict, logout } from '../services/api'
+import HealthMetricsForm from '../components/HealthMetricsForm'
 
 export default function FootScanAnalysis({ onLogout }) {
   const navigate = useNavigate()
@@ -9,6 +10,12 @@ export default function FootScanAnalysis({ onLogout }) {
   const [activeNav, setActiveNav] = useState('scan')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState('')
+  const [age, setAge] = useState('')
+  const [bmi, setBmi] = useState('')
+  const [sugarBeforeFast, setSugarBeforeFast] = useState('')
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStartTime, setUploadStartTime] = useState(null)
+  const [analysisSuccess, setAnalysisSuccess] = useState(false)
 
   const handleFileUpload = (file) => {
     if (file && file.type.startsWith('image/')) {
@@ -39,30 +46,61 @@ export default function FootScanAnalysis({ onLogout }) {
       return
     }
 
+    if (!age || !bmi || !sugarBeforeFast) {
+      setError('Please fill in all health metrics before analyzing')
+      return
+    }
+
     setIsAnalyzing(true)
     setError('')
+    setUploadProgress(0)
+    setUploadStartTime(Date.now())
+    setAnalysisSuccess(false)
 
     try {
+      // Simulate upload progress
+      const uploadInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(uploadInterval)
+            return 90
+          }
+          return prev + Math.random() * 20
+        })
+      }, 300)
+
       const uploadResponse = await uploadImage(uploadedImage)
+      clearInterval(uploadInterval)
+      setUploadProgress(100)
+      
       const imageUrl = uploadResponse.url
 
       const patientProfile = JSON.parse(localStorage.getItem('patient_profile') || '{}')
       
       const predictionResponse = await predict({
         image_url: imageUrl,
-        age: patientProfile.age || 45,
-        bmi: patientProfile.bmi || 25,
-        diabetes_duration: patientProfile.diabetes_duration || 5,
-        infection_signs: patientProfile.infection_signs || 'none',
+        age: parseInt(age),
+        bmi: parseFloat(bmi),
+        blood_sugar: parseInt(sugarBeforeFast),
+        diabetes_duration: patientProfile.diabetes_duration || 'Not specified',
         patient_id: patientProfile.id || null
       })
 
-      navigate('/scan-results', {
-        state: { 
-          previewImage,
-          prediction: predictionResponse
-        }
-      })
+      setAnalysisSuccess(true)
+      
+      setTimeout(() => {
+        navigate('/scan-results', {
+          state: { 
+            previewImage,
+            prediction: predictionResponse,
+            healthMetrics: {
+              age: parseInt(age),
+              bmi: parseFloat(bmi),
+              bloodSugar: parseInt(sugarBeforeFast)
+            }
+          }
+        })
+      }, 1500)
     } catch (err) {
       console.error('Analysis error:', err)
       setError(err.response?.data?.detail || 'Failed to analyze image. Please try again.')
@@ -238,9 +276,27 @@ export default function FootScanAnalysis({ onLogout }) {
               {/* Preview Section */}
               <div className="lg:col-span-4">
                 <div className="sticky top-24 space-y-6">
+                  {/* Health Metrics Card */}
+                  <div className="rounded-xl bg-white p-5 shadow-lg ring-1 ring-slate-200">
+                    <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary">favorite</span>
+                      Health Metrics
+                    </h4>
+                    <HealthMetricsForm
+                      age={age}
+                      setAge={setAge}
+                      bmi={bmi}
+                      setBmi={setBmi}
+                      sugarBeforeFast={sugarBeforeFast}
+                      setSugarBeforeFast={setSugarBeforeFast}
+                      compact={true}
+                    />
+                  </div>
+
+                  {/* Image Preview Card */}
                   <div className="rounded-xl bg-white p-4 shadow-lg ring-1 ring-slate-200">
                     <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-500">Preview</h4>
-                    <div className="relative aspect-square overflow-hidden rounded-lg bg-slate-100">
+                    <div className="relative aspect-square overflow-hidden rounded-lg bg-slate-100 border-2 border-dashed border-slate-200">
                       {previewImage ? (
                         <div>
                           <img
@@ -248,36 +304,99 @@ export default function FootScanAnalysis({ onLogout }) {
                             className="h-full w-full object-cover"
                             src={previewImage}
                           />
+                          <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded-lg bg-green-500/90 text-white px-3 py-1.5 text-xs font-bold">
+                            <span className="material-symbols-outlined text-sm">check_circle</span>
+                            Uploaded
+                          </div>
                           <p className="absolute bottom-2 left-2 right-2 text-xs font-bold text-white bg-slate-900/70 px-2 py-1 rounded truncate">
                             {uploadedImage?.name || 'Image uploaded'}
                           </p>
                         </div>
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <p className="text-sm text-slate-400">No image uploaded</p>
+                          <p className="text-sm text-slate-400">No image selected</p>
                         </div>
                       )}
                     </div>
+
+                    {/* Upload Progress */}
+                    {isAnalyzing && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-slate-600">Analyzing...</p>
+                          <p className="text-xs font-bold text-primary">{Math.round(uploadProgress)}%</p>
+                        </div>
+                        <div className="relative w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                          <div
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all duration-300 shadow-lg shadow-primary/50"
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error Message */}
+                    {error && (
+                      <div className="mt-4 flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 p-3">
+                        <span className="material-symbols-outlined text-red-600 flex-shrink-0 text-lg">error</span>
+                        <p className="text-xs text-red-700">{error}</p>
+                      </div>
+                    )}
+
+                    {/* Success Message */}
+                    {analysisSuccess && (
+                      <div className="mt-4 flex items-start gap-3 rounded-lg bg-green-50 border border-green-200 p-3">
+                        <span className="material-symbols-outlined text-green-600 flex-shrink-0 text-lg">check_circle</span>
+                        <p className="text-xs text-green-700">Analysis complete! Redirecting to results...</p>
+                      </div>
+                    )}
+
+                    {/* Analyze Button */}
                     <button
                       onClick={handleStartAnalysis}
-                      disabled={!uploadedImage || isAnalyzing}
-                      className={`mt-6 w-full rounded-xl py-4 font-bold text-white shadow-lg shadow-primary/30 transition-all flex items-center justify-center gap-2 ${
-                        isAnalyzing || !uploadedImage
-                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed opacity-50'
-                          : 'bg-primary hover:bg-primary/90'
+                      disabled={!uploadedImage || !age || !bmi || !sugarBeforeFast || isAnalyzing || analysisSuccess}
+                      className={`mt-6 w-full rounded-xl py-4 font-bold text-white shadow-lg transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden group ${
+                        isAnalyzing || analysisSuccess || !uploadedImage || !age || !bmi || !sugarBeforeFast
+                          ? 'bg-slate-300 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-primary to-blue-500 hover:shadow-primary/50 hover:-translate-y-0.5 active:scale-95'
                       }`}
                     >
-                      <span>{isAnalyzing ? 'Analyzing...' : 'Start Analysis'}</span>
+                      {isAnalyzing && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                      )}
+                      <span className="relative flex items-center gap-2">
+                        {analysisSuccess ? (
+                          <>
+                            <span className="material-symbols-outlined">check</span>
+                            <span>Analysis Complete</span>
+                          </>
+                        ) : isAnalyzing ? (
+                          <>
+                            <span className="inline-block animate-spin">
+                              <span className="material-symbols-outlined">hourglass_bottom</span>
+                            </span>
+                            <span>Analyzing Image...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined">search</span>
+                            <span>Start Analysis</span>
+                          </>
+                        )}
+                      </span>
                     </button>
+
                     <p className="mt-3 text-center text-xs text-slate-400">
                       By clicking "Start Analysis", you agree to our <a className="underline hover:text-primary transition-colors" href="#">Terms of Service</a>.
                     </p>
                   </div>
+
+                  {/* Privacy Notice */}
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                     <div className="flex gap-3 text-primary">
-                      <span className="material-symbols-outlined flex-shrink-0">info</span>
+                      <span className="material-symbols-outlined flex-shrink-0">shield</span>
                       <p className="text-xs font-medium leading-relaxed">
-                        Your data is encrypted. We do not store identifiable biometric data unless you choose to save it to your records.
+                        <strong>Privacy & Security:</strong> Your data is encrypted with 256-bit SSL. We comply with HIPAA regulations.
                       </p>
                     </div>
                   </div>

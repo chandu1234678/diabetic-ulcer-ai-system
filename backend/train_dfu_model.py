@@ -24,7 +24,7 @@ def train():
     # --- Config ---
     DATASET_PATH = os.path.join(os.path.dirname(__file__), "..", "datasets", "images")
     MODEL_SAVE_PATH = os.path.join(os.path.dirname(__file__), "models")
-    EPOCHS = 15
+    EPOCHS = 50
     BATCH_SIZE = 16
     LEARNING_RATE = 0.001
     TEST_SPLIT = 0.2

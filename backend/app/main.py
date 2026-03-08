@@ -7,7 +7,7 @@ from prometheus_client import make_asgi_app
 from app.database import Base, engine
 from app.config import settings
 from app.auth.auth_router import router as auth_router
-from app.routes import health, predict, upload, reports, patients, patient_progression, statistics
+from app.routes import health, predict, upload, reports, patients, patient_progression, statistics, health_metrics
 from app import models
 
 logging.basicConfig(level=logging.INFO)
@@ -41,6 +41,7 @@ app.include_router(reports.router)
 app.include_router(patients.router)
 app.include_router(patient_progression.router)
 app.include_router(statistics.router)
+app.include_router(health_metrics.router)
 
 @app.get("/")
 def root():

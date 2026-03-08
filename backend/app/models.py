@@ -14,6 +14,7 @@ class User(Base):
     
     patients = relationship("Patient", back_populates="user")
     prediction_logs = relationship("PredictionLog", back_populates="user")
+    health_metrics = relationship("HealthMetrics", back_populates="user")
 
 class Patient(Base):
     __tablename__ = "patients"
@@ -61,3 +62,19 @@ class UlcerImage(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     patient = relationship("Patient", back_populates="ulcer_images")
+
+class HealthMetrics(Base):
+    __tablename__ = "health_metrics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    age = Column(Integer)
+    bmi = Column(Float)
+    blood_sugar = Column(Float)
+    diabetes_duration = Column(Integer, nullable=True)
+    risk_score = Column(Float)
+    risk_level = Column(String)
+    recommendations = Column(Text)  # Stored as JSON string
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User", back_populates="health_metrics")

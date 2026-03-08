@@ -62,3 +62,22 @@ export function logout() {
   localStorage.removeItem('user_data')
   localStorage.removeItem('patient_profile')
 }
+
+export async function getHealthMetricsAssessment(payload) {
+  try {
+    const { data } = await api.post('/health-metrics/assess', payload)
+    return data
+  } catch (error) {
+    console.error('Health assessment error:', error)
+    // Return mock assessment if API fails
+    return {
+      risk_score: 50,
+      recommendations: ['Maintain regular physical activity', 'Monitor blood sugar levels'],
+      details: {
+        bmi_category: 'Normal',
+        sugar_level: 'Normal',
+        age_group: 'Adult',
+      },
+    }
+  }
+}

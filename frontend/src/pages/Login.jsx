@@ -114,15 +114,25 @@ export default function Login({ onLogin }) {
               </button>
             </div>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <div className="flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 p-3">
+                <span className="material-symbols-outlined text-red-600 flex-shrink-0">error</span>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+              className="relative mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-[#2575c0] py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-primary/40 disabled:cursor-not-allowed disabled:opacity-70 active:scale-95 overflow-hidden"
             >
-              <span>{loading ? 'Signing In...' : 'Sign In'}</span>
-              <span className="material-symbols-outlined text-xl">arrow_forward</span>
+              {loading && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+              )}
+              <span className="relative flex items-center gap-2">
+                {loading ? 'Signing In...' : 'Sign In'}
+                {!loading && <span className="material-symbols-outlined text-xl">arrow_forward</span>}
+              </span>
             </button>
 
             <div className="relative flex items-center py-4">
@@ -134,7 +144,7 @@ export default function Login({ onLogin }) {
             <button
               type="button"
               onClick={() => navigate('/signup')}
-              className="w-full rounded-lg border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              className="w-full rounded-lg border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:border-primary hover:text-primary active:scale-95"
             >
               Create an account
             </button>

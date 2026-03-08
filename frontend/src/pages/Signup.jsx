@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { register } from '../services/api'
+import HealthMetricsForm from '../components/HealthMetricsForm'
 
 function getStrength(password) {
   if (password.length >= 12) return 4
@@ -17,12 +18,15 @@ export default function Signup({ onLogin }) {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [age, setAge] = useState('')
+  const [bmi, setBmi] = useState('')
+  const [sugarBeforeFast, setSugarBeforeFast] = useState('')
   const [diabetesDuration, setDiabetesDuration] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
   const strength = useMemo(() => getStrength(password), [password])
 
@@ -30,8 +34,38 @@ export default function Signup({ onLogin }) {
     event.preventDefault()
     setError('')
 
+    if (!fullName.trim()) {
+      setError('Full name is required')
+      return
+    }
+
+    if (!email.trim()) {
+      setError('Email is required')
+      return
+    }
+
+    if (!age) {
+      setError('Age is required')
+      return
+    }
+
+    if (!bmi) {
+      setError('BMI is required')
+      return
+    }
+
+    if (!sugarBeforeFast) {
+      setError('Blood sugar level is required')
+      return
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long')
       return
     }
 
@@ -46,12 +80,22 @@ export default function Signup({ onLogin }) {
       const data = await register({ email, password })
       localStorage.setItem('access_token', data.access_token || '')
       localStorage.setItem('patient_profile', JSON.stringify({
-        fullName,
-        age,
-        diabetesDuration,
+        full_name: fullName,
+        email,
+        age: parseInt(age),
+        bmi: parseFloat(bmi),
+        blood_sugar: parseInt(sugarBeforeFast),
+        diabetes_duration: diabetesDuration,
       }))
-      onLogin()
-      navigate('/dashboard', { replace: true })
+      localStorage.setItem('user_data', JSON.stringify({
+        full_name: fullName,
+        email,
+      }))
+      setSubmitSuccess(true)
+      setTimeout(() => {
+        onLogin()
+        navigate('/dashboard', { replace: true })
+      }, 1500)
     } catch {
       setError('Unable to create account. This email may already be registered.')
     } finally {
@@ -165,28 +209,41 @@ export default function Signup({ onLogin }) {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col">
-                  <label className="mb-1.5 ml-1 text-sm font-semibold text-slate-700">Age</label>
-                  <input
-                    type="number"
-                    required
-                    value={age}
-                    onChange={(event) => setAge(event.target.value)}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/50"
-                    placeholder="Years"
-                  />
+              {/* Health Metrics */}
+              <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-blue-50 border-2 border-primary/20 p-6 space-y-4">
+                <div className="flex items-center gap-3 pb-3 border-b-2 border-primary/10">
+                  <div className="p-2.5 rounded-lg bg-primary/10">
+                    <span className="material-symbols-outlined text-lg text-primary">favorite</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Health Metrics</h3>
+                    <p className="text-xs text-slate-600">We&apos;ll use this for personalized risk assessment</p>
+                  </div>
                 </div>
+                <HealthMetricsForm
+                  age={age}
+                  setAge={setAge}
+                  bmi={bmi}
+                  setBmi={setBmi}
+                  sugarBeforeFast={sugarBeforeFast}
+                  setSugarBeforeFast={setSugarBeforeFast}
+                  compact={true}
+                />
+              </div>
 
-                <div className="flex flex-col">
-                  <label className="mb-1.5 ml-1 text-sm font-semibold text-slate-700">
-                    Diabetes Duration <span className="font-normal opacity-60">(Optional)</span>
-                  </label>
+              <div className="flex flex-col">
+                <label className="mb-1.5 ml-1 text-sm font-semibold text-slate-700">
+                  Diabetes Duration <span className="font-normal opacity-60">(Optional)</span>
+                </label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-xl text-slate-400">
+                    calendar_month
+                  </span>
                   <input
                     type="text"
                     value={diabetesDuration}
                     onChange={(event) => setDiabetesDuration(event.target.value)}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/50"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-12 py-3.5 text-slate-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/50"
                     placeholder="e.g. 5 years"
                   />
                 </div>
@@ -206,14 +263,37 @@ export default function Signup({ onLogin }) {
                 </label>
               </div>
 
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && (
+                <div className="flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 p-4">
+                  <span className="material-symbols-outlined text-red-600 flex-shrink-0">error</span>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
+              {submitSuccess && (
+                <div className="flex items-start gap-3 rounded-lg bg-green-50 border border-green-200 p-4">
+                  <span className="material-symbols-outlined text-green-600 flex-shrink-0">check_circle</span>
+                  <p className="text-sm text-green-700">Account created successfully! Redirecting to dashboard...</p>
+                </div>
+              )}
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full rounded-lg bg-gradient-to-r from-primary to-[#2575c0] py-4 font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:shadow-primary/50 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={loading || submitSuccess}
+                className="relative w-full rounded-lg bg-gradient-to-r from-primary to-[#2575c0] py-4 font-bold text-white shadow-lg shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-primary/50 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-2 overflow-hidden"
               >
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                )}
+                <span className={submitSuccess ? 'invisible' : ''}>
+                  {loading ? 'Creating Account...' : submitSuccess ? 'Account Created!' : 'Create Account'}
+                </span>
+                {submitSuccess && (
+                  <span className="material-symbols-outlined absolute">check</span>
+                )}
+                {!loading && !submitSuccess && (
+                  <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                )}
               </button>
             </form>
 
