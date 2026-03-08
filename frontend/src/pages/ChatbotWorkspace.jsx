@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChatbotPanel from '../components/ChatbotPanel'
 import { predict, uploadImage } from '../services/api'
-import { applyDarkMode } from '../utils/darkMode'
+import DashboardHeader from '../components/DashboardHeader'
 
 export default function ChatbotWorkspace({ onLogout }) {
   const navigate = useNavigate()
@@ -10,11 +10,6 @@ export default function ChatbotWorkspace({ onLogout }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
-
-  // Apply dark mode on mount
-  useEffect(() => {
-    applyDarkMode()
-  }, [])
 
   const handleFile = async (file) => {
     if (!file) return
@@ -63,31 +58,11 @@ export default function ChatbotWorkspace({ onLogout }) {
     : '94.2%'
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.15),_transparent_45%)] dark:bg-slate-900">
-      <header className="sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-          <button 
-            onClick={() => window.location.href = '/dashboard'} 
-            className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white hover:opacity-80 transition-opacity"
-          >
-            MedVision <span className="text-primary">AI</span>
-          </button>
-          <div className="flex items-center gap-3">
-            <a
-              href="/history"
-              className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-            >
-              📊 History
-            </a>
-            <button
-              onClick={handleLogout}
-              className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white">
+      <DashboardHeader 
+        title="MedVision AI" 
+        onLogout={onLogout}
+      />
 
       <main className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-3">
         <section className="space-y-6 lg:col-span-2">

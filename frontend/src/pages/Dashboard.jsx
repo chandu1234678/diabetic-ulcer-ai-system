@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { applyDarkMode, toggleDarkMode } from '../utils/darkMode'
 import { logout } from '../services/api'
 
 export default function Dashboard({ onLogout }) {
@@ -11,26 +10,12 @@ export default function Dashboard({ onLogout }) {
   const [chatMessage, setChatMessage] = useState('')
   const [activeNav, setActiveNav] = useState('dashboard')
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(false)
   
   const patientProfile = JSON.parse(localStorage.getItem('patient_profile') || '{}')
   const userData = JSON.parse(localStorage.getItem('user_data') || '{}')
   const userName = patientProfile.full_name || userData.full_name || 'John Doe'
   const patientId = patientProfile.patient_id || userData.patient_id || userData.id || 'PT-2024-001'
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase()
-
-  // Apply dark mode on mount - default to light mode
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true'
-    setIsDarkMode(savedDarkMode)
-    applyDarkMode()
-  }, [])
-
-  const handleDarkModeToggle = () => {
-    const newMode = !isDarkMode
-    setIsDarkMode(newMode)
-    toggleDarkMode(newMode)
-  }
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -74,9 +59,9 @@ export default function Dashboard({ onLogout }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-light dark:bg-slate-950 text-slate-900 dark:text-white font-display">
+    <div className="flex min-h-screen bg-light text-slate-900 font-display">
       {/* Sidebar Navigation */}
-      <aside className="hidden lg:flex flex-col w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 sticky top-0 h-screen">
+      <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-200 sticky top-0 h-screen">
         <button 
           onClick={() => handleNavigation('/dashboard', 'dashboard')} 
           className="p-6 flex items-center gap-3 hover:opacity-80 transition-opacity"
@@ -92,7 +77,7 @@ export default function Dashboard({ onLogout }) {
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl font-bold transition-colors ${
               activeNav === 'dashboard'
                 ? 'bg-primary/10 text-primary'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <span className="material-symbols-outlined">dashboard</span>
@@ -103,7 +88,7 @@ export default function Dashboard({ onLogout }) {
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${
               activeNav === 'scan'
                 ? 'bg-primary/10 text-primary font-bold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <span className="material-symbols-outlined">footprint</span>
@@ -114,7 +99,7 @@ export default function Dashboard({ onLogout }) {
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${
               activeNav === 'ai'
                 ? 'bg-primary/10 text-primary font-bold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <span className="material-symbols-outlined">smart_toy</span>
@@ -125,7 +110,7 @@ export default function Dashboard({ onLogout }) {
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${
               activeNav === 'results'
                 ? 'bg-primary/10 text-primary font-bold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <span className="material-symbols-outlined">assignment</span>
@@ -136,7 +121,7 @@ export default function Dashboard({ onLogout }) {
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${
               activeNav === 'progress'
                 ? 'bg-primary/10 text-primary font-bold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <span className="material-symbols-outlined">trending_up</span>
@@ -147,20 +132,20 @@ export default function Dashboard({ onLogout }) {
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${
               activeNav === 'reports'
                 ? 'bg-primary/10 text-primary font-bold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <span className="material-symbols-outlined">description</span>
             <span>Reports</span>
           </button>
         </nav>
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+        <div className="p-4 border-t border-slate-200">
           <button
             onClick={() => handleNavigation('#', 'settings')}
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${
               activeNav === 'settings'
                 ? 'bg-primary/10 text-primary font-bold'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <span className="material-symbols-outlined">settings</span>
@@ -170,13 +155,13 @@ export default function Dashboard({ onLogout }) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 bg-light dark:bg-slate-950">
+      <main className="flex-1 flex flex-col min-w-0 bg-light">
         {/* Top Header */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between sticky top-0 z-10">
+        <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4 lg:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+              className="text-slate-600 hover:text-slate-900"
             >
               <span className="material-symbols-outlined">menu</span>
             </button>
@@ -184,9 +169,9 @@ export default function Dashboard({ onLogout }) {
           </div>
           <div className="flex-1 max-w-xl mx-8 hidden md:block">
             <form onSubmit={handleSearch} className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400">search</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">search</span>
               <input
-                className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary/50 text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
+                className="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg focus:ring-2 focus:ring-primary/50 text-sm text-slate-900 placeholder-slate-500"
                 placeholder="Search records, scans or help..."
                 type="text"
                 value={searchQuery}
@@ -195,21 +180,14 @@ export default function Dashboard({ onLogout }) {
             </form>
           </div>
           <div className="flex items-center gap-4">
-            <button 
-              onClick={handleDarkModeToggle}
-              className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
-              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              <span className="material-symbols-outlined">{isDarkMode ? 'light_mode' : 'dark_mode'}</span>
-            </button>
-            <button className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+            <button className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
               <span className="material-symbols-outlined">notifications</span>
             </button>
-            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700"></div>
+            <div className="h-8 w-px bg-slate-200"></div>
             <div className="relative flex items-center gap-3" ref={profileMenuRef} data-profile-menu>
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{userName}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Patient ID: {patientId}</p>
+                <p className="text-sm font-bold text-slate-900">{userName}</p>
+                <p className="text-xs text-slate-500">Patient ID: {patientId}</p>
               </div>
               <button
                 onClick={(e) => {
@@ -225,7 +203,7 @@ export default function Dashboard({ onLogout }) {
                 />
               </button>
               {showProfileMenu && (
-                <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 w-48" onClick={(e) => e.stopPropagation()}>
+                <div className="absolute top-full right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-lg z-50 w-48" onClick={(e) => e.stopPropagation()}>
                   <button onClick={(e) => { e.stopPropagation(); setShowProfileMenu(false); navigate('/account-settings') }} className="w-full px-4 py-2 text-left text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px]">person</span>
                     Profile Settings
@@ -234,17 +212,17 @@ export default function Dashboard({ onLogout }) {
                     <span className="material-symbols-outlined text-[18px]">settings</span>
                     Account
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); setShowProfileMenu(false); navigate('/history') }} className="w-full px-4 py-2 text-left text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm flex items-center gap-2">
+                  <button onClick={(e) => { e.stopPropagation(); setShowProfileMenu(false); navigate('/history') }} className="w-full px-4 py-2 text-left text-slate-900 hover:bg-slate-100 transition-colors text-sm flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px]">history</span>
                     History
                   </button>
-                  <div className="border-t border-slate-200 dark:border-slate-700"></div>
+                  <div className="border-t border-slate-200"></div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       handleLogout()
                     }}
-                    className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-red-600 hover:bg-slate-100 transition-colors text-sm flex items-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[18px]">logout</span>
                     Logout
@@ -259,8 +237,8 @@ export default function Dashboard({ onLogout }) {
         <div className="p-6 space-y-6 pb-24 overflow-y-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Welcome back, {userName.split(' ')[0]}</h2>
-              <p className="text-slate-600 dark:text-slate-400">Here is your foot health overview for today.</p>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome back, {userName.split(' ')[0]}</h2>
+              <p className="text-slate-600">Here is your foot health overview for today.</p>
             </div>
             <button
               onClick={() => navigate('/foot-scan-analysis')}

@@ -1,5 +1,53 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import { getHealthMetricsAssessment } from '../services/api'
+
+// Memoize MetricCard to prevent unnecessary re-renders that cause focus loss
+const MetricCard = memo(({ icon, label, value, placeholder, onChange, error, min, max, step, focusedField, setFocusedField, isRequired }) => (
+  <div className="flex flex-col">
+    <div className={`flex items-center gap-2 mb-2 transition-all ${focusedField === label ? 'scale-105' : ''}`}>
+      <div className={`p-2 rounded-lg transition-all ${
+        focusedField === label
+          ? 'bg-primary/20 text-primary'
+          : 'bg-slate-100 text-slate-500'
+      }`}>
+        <span className="material-symbols-outlined text-lg">{icon}</span>
+      </div>
+      <label className={`font-semibold transition-all uppercase tracking-wide ${
+        focusedField === label
+          ? 'text-primary text-sm'
+          : 'text-slate-700 text-xs'
+      }`}>
+        {label}
+        {isRequired && <span className="text-slate-400 ml-1">*</span>}
+        {!isRequired && <span className="text-slate-400 ml-1 text-[10px]">(optional)</span>}
+      </label>
+    </div>
+    <input
+      type="number"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setFocusedField(label)}
+      onBlur={() => setFocusedField(null)}
+      className={`w-full rounded-xl border-2 px-4 py-3 text-slate-900 outline-none transition-all font-semibold text-center ${
+        focusedField === label
+          ? 'border-primary/50 bg-primary/5 shadow-lg shadow-primary/20'
+          : 'border-slate-200 bg-white hover:border-slate-300'
+      }`}
+      placeholder={placeholder}
+    />
+    {error && (
+      <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+        <span className="material-symbols-outlined text-sm">error</span>
+        {error}
+      </p>
+    )}
+  </div>
+))
+
+MetricCard.displayName = 'MetricCard'
 
 export default function HealthMetricsForm({
   age,
@@ -9,6 +57,7 @@ export default function HealthMetricsForm({
   sugarBeforeFast,
   setSugarBeforeFast,
   showOptional = true,
+  isRequired = true,  // NEW: Make fields required only during prediction
   compact = false,
   className = '',
 }) {
@@ -18,15 +67,40 @@ export default function HealthMetricsForm({
   const [assessment, setAssessment] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
+  const debounceTimer = useRef(null)
 
-  // Calculate assessment when metrics change
-  useEffect(() => {
-    if (age && bmi && sugarBeforeFast) {
-      fetchAssessment()
+  // Use useCallback to prevent function recreation on every render
+  const handleAgeChange = useCallback((value) => {
+    setAgeError('')
+    const numValue = parseInt(value)
+    // Only validate if required or if value is provided
+    if (value && (isNaN(numValue) || numValue < 1 || numValue > 150)) {
+      setAgeError('Age must be between 1 and 150')
     }
-  }, [age, bmi, sugarBeforeFast])
+    setAge(value)
+  }, [setAge])
 
-  const fetchAssessment = async () => {
+  const handleBmiChange = useCallback((value) => {
+    setBmiError('')
+    const numValue = parseFloat(value)
+    // Only validate if required or if value is provided
+    if (value && (isNaN(numValue) || numValue < 10 || numValue > 60)) {
+      setBmiError('BMI should be between 10 and 60')
+    }
+    setBmi(value)
+  }, [setBmi])
+
+  const handleSugarChange = useCallback((value) => {
+    setSugarError('')
+    const numValue = parseInt(value)
+    // Only validate if required or if value is provided
+    if (value && (isNaN(numValue) || numValue < 40 || numValue > 500)) {
+      setSugarError('Blood sugar should be between 40 and 500 mg/dL')
+    }
+    setSugarBeforeFast(value)
+  }, [setSugarBeforeFast])
+
+  const fetchAssessment = useCallback(async () => {
     setIsLoading(true)
     try {
       const result = await getHealthMetricsAssessment({
@@ -40,34 +114,37 @@ export default function HealthMetricsForm({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [age, bmi, sugarBeforeFast])
 
-  const handleAgeChange = (value) => {
-    setAgeError('')
-    const numValue = parseInt(value)
-    if (value && (isNaN(numValue) || numValue < 1 || numValue > 150)) {
-      setAgeError('Age must be between 1 and 150')
+  // Calculate assessment when metrics change (with debounce to prevent API spam)
+  // Only fetch if:
+  // 1. All fields have values AND
+  // 2. Either isRequired=false (optional mode, only fetch if user provided values)
+  //    OR isRequired=true (required mode, always fetch if values exist)
+  useEffect(() => {
+    // Clear previous timeout
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
     }
-    setAge(value)
-  }
 
-  const handleBmiChange = (value) => {
-    setBmiError('')
-    const numValue = parseFloat(value)
-    if (value && (isNaN(numValue) || numValue < 10 || numValue > 60)) {
-      setBmiError('BMI should be between 10 and 60')
+    // Only fetch if all fields have values
+    if (age && bmi && sugarBeforeFast) {
+      // Delay API call by 500ms to allow smooth typing without triggering API calls
+      debounceTimer.current = setTimeout(() => {
+        fetchAssessment()
+      }, 500)
+    } else if (isRequired === false) {
+      // In optional mode, clear assessment if fields are empty
+      setAssessment(null)
     }
-    setBmi(value)
-  }
 
-  const handleSugarChange = (value) => {
-    setSugarError('')
-    const numValue = parseInt(value)
-    if (value && (isNaN(numValue) || numValue < 40 || numValue > 500)) {
-      setSugarError('Blood sugar should be between 40 and 500 mg/dL')
+    // Cleanup on unmount
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
     }
-    setSugarBeforeFast(value)
-  }
+  }, [age, bmi, sugarBeforeFast, fetchAssessment, isRequired])
 
   const getRiskColor = (riskScore) => {
     if (riskScore < 30) return { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', label: 'Low Risk' }
@@ -85,50 +162,6 @@ export default function HealthMetricsForm({
     ? 'grid grid-cols-1 gap-3 sm:grid-cols-3'
     : 'grid grid-cols-1 gap-5 sm:grid-cols-3'
 
-  const MetricCard = ({ icon, label, value, placeholder, onChange, error, min, max, step }) => (
-    <div className="flex flex-col">
-      <div className={`flex items-center gap-2 mb-2 transition-all ${focusedField === label ? 'scale-105' : ''}`}>
-        <div className={`p-2 rounded-lg transition-all ${
-          focusedField === label
-            ? 'bg-primary/20 text-primary'
-            : 'bg-slate-100 text-slate-500'
-        }`}>
-          <span className="material-symbols-outlined text-lg">{icon}</span>
-        </div>
-        <label className={`font-semibold transition-all ${
-          focusedField === label
-            ? 'text-primary text-sm'
-            : 'text-slate-700 text-xs'
-        } uppercase tracking-wide`}>
-          {label}
-          {showOptional && <span className="text-slate-400 ml-1">*</span>}
-        </label>
-      </div>
-      <input
-        type="number"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocusedField(label)}
-        onBlur={() => setFocusedField(null)}
-        className={`w-full rounded-xl border-2 px-4 py-3 text-slate-900 outline-none transition-all font-semibold text-center ${
-          focusedField === label
-            ? 'border-primary/50 bg-primary/5 shadow-lg shadow-primary/20'
-            : 'border-slate-200 bg-white hover:border-slate-300'
-        }`}
-        placeholder={placeholder}
-      />
-      {error && (
-        <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
-          <span className="material-symbols-outlined text-sm">error</span>
-          {error}
-        </p>
-      )}
-    </div>
-  )
-
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Main Metrics Grid */}
@@ -143,6 +176,9 @@ export default function HealthMetricsForm({
           min={1}
           max={150}
           step={1}
+          focusedField={focusedField}
+          setFocusedField={setFocusedField}
+          isRequired={isRequired}
         />
         <MetricCard
           icon="monitor_weight"
@@ -154,6 +190,9 @@ export default function HealthMetricsForm({
           min={10}
           max={60}
           step={0.1}
+          focusedField={focusedField}
+          setFocusedField={setFocusedField}
+          isRequired={isRequired}
         />
         <MetricCard
           icon="local_florist"
@@ -165,6 +204,9 @@ export default function HealthMetricsForm({
           min={40}
           max={500}
           step={1}
+          focusedField={focusedField}
+          setFocusedField={setFocusedField}
+          isRequired={isRequired}
         />
       </div>
 

@@ -44,20 +44,8 @@ export default function Signup({ onLogin }) {
       return
     }
 
-    if (!age) {
-      setError('Age is required')
-      return
-    }
-
-    if (!bmi) {
-      setError('BMI is required')
-      return
-    }
-
-    if (!sugarBeforeFast) {
-      setError('Blood sugar level is required')
-      return
-    }
+    // Health metrics are OPTIONAL during signup
+    // Users can fill them in later when uploading foot image
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
@@ -82,10 +70,11 @@ export default function Signup({ onLogin }) {
       localStorage.setItem('patient_profile', JSON.stringify({
         full_name: fullName,
         email,
-        age: parseInt(age),
-        bmi: parseFloat(bmi),
-        blood_sugar: parseInt(sugarBeforeFast),
-        diabetes_duration: diabetesDuration,
+        // Store health metrics with defaults if not provided
+        age: age ? parseInt(age) : 35,  // Default: 35
+        bmi: bmi ? parseFloat(bmi) : 25,  // Default: 25 (normal)
+        blood_sugar: sugarBeforeFast ? parseInt(sugarBeforeFast) : 120,  // Default: 120 (normal fasting)
+        diabetes_duration: diabetesDuration ? parseInt(diabetesDuration) : 0,
       }))
       localStorage.setItem('user_data', JSON.stringify({
         full_name: fullName,

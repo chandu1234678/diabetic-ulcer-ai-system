@@ -24,10 +24,10 @@ class Settings(BaseSettings):
     cloudinary_api_key: str = os.getenv("CLOUDINARY_API_KEY", "")
     cloudinary_api_secret: str = os.getenv("CLOUDINARY_API_SECRET", "")
     
-    model_path: str = os.getenv("MODEL_PATH", "./models/cnn_ulcer_model.pth")
-    cnn_model_path: str = os.getenv("CNN_MODEL_PATH", model_path)
-    segmentation_model_path: str = os.getenv("SEGMENTATION_MODEL_PATH", "./models/segmentation_model.pth")
-    multimodal_model_path: str = os.getenv("MULTIMODAL_MODEL_PATH", "./models/multimodal_model.pth")
+    # Standard model paths
+    cnn_model_path: str = os.getenv("CNN_MODEL_PATH", os.path.join(BASE_DIR, "backend", "models", "best_dfu_model.pth"))
+    segmentation_model_path: str = os.getenv("SEGMENTATION_MODEL_PATH", os.path.join(BASE_DIR, "backend", "models", "segmentation_model.pth"))
+    multimodal_model_path: str = os.getenv("MULTIMODAL_MODEL_PATH", os.path.join(BASE_DIR, "backend", "models", "multimodal_model.pth"))
     
     allowed_image_extensions: list = [".jpg", ".jpeg", ".png", ".bmp"]
     max_image_size_mb: int = 10

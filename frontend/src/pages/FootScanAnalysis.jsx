@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { uploadImage, predict, logout } from '../services/api'
+import { getHealthMetricsAssessment } from '../services/api'
 import HealthMetricsForm from '../components/HealthMetricsForm'
+import DashboardHeader from '../components/DashboardHeader'
 
 export default function FootScanAnalysis({ onLogout }) {
   const navigate = useNavigate()
@@ -16,6 +18,14 @@ export default function FootScanAnalysis({ onLogout }) {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadStartTime, setUploadStartTime] = useState(null)
   const [analysisSuccess, setAnalysisSuccess] = useState(false)
+
+  // Load health metrics defaults from localStorage on mount
+  useEffect(() => {
+    const savedMetrics = JSON.parse(localStorage.getItem('health_metrics_defaults') || '{}')
+    if (savedMetrics.age) setAge(String(savedMetrics.age))
+    if (savedMetrics.bmi) setBmi(String(savedMetrics.bmi))
+    if (savedMetrics.blood_sugar) setSugarBeforeFast(String(savedMetrics.blood_sugar))
+  }, [])
 
   const handleFileUpload = (file) => {
     if (file && file.type.startsWith('image/')) {
@@ -81,8 +91,8 @@ export default function FootScanAnalysis({ onLogout }) {
         image_url: imageUrl,
         age: parseInt(age),
         bmi: parseFloat(bmi),
-        blood_sugar: parseInt(sugarBeforeFast),
-        diabetes_duration: patientProfile.diabetes_duration || 'Not specified',
+        diabetes_duration: parseInt(patientProfile.diabetes_duration) || 0,
+        infection_signs: 'none',
         patient_id: patientProfile.id || null
       })
 
@@ -109,6 +119,39 @@ export default function FootScanAnalysis({ onLogout }) {
     }
   }
 
+  const handleViewHealthMetrics = async () => {
+    if (!age || !bmi || !sugarBeforeFast) {
+      setError('Please fill in all health metrics')
+      return
+    }
+
+    try {
+      setIsAnalyzing(true)
+      const assessment = await getHealthMetricsAssessment({
+        age: parseInt(age),
+        bmi: parseFloat(bmi),
+        blood_sugar: parseInt(sugarBeforeFast),
+      })
+
+      navigate('/health-metrics-results', {
+        state: {
+          assessment,
+          healthMetrics: {
+            age: parseInt(age),
+            bmi: parseFloat(bmi),
+            bloodSugar: parseInt(sugarBeforeFast)
+          },
+          previewImage
+        }
+      })
+    } catch (err) {
+      console.error('Error fetching assessment:', err)
+      setError('Failed to calculate health metrics. Please try again.')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
   const handleLogout = () => {
     if (onLogout) {
       onLogout()
@@ -121,51 +164,10 @@ export default function FootScanAnalysis({ onLogout }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background-light text-slate-900 font-display">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-8">
-          <div className="flex items-center gap-4">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-white">
-              <span className="material-symbols-outlined">health_metrics</span>
-            </div>
-            <h1 className="text-xl font-bold tracking-tight">HealthScan AI</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/history')}
-              className="flex size-10 items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
-              title="View History"
-            >
-              <span className="material-symbols-outlined text-slate-600">history</span>
-            </button>
-            <button className="flex size-10 items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
-              <span className="material-symbols-outlined text-slate-600">notifications</span>
-            </button>
-            <div className="h-8 w-px bg-slate-200"></div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Logout"
-            >
-              <span className="material-symbols-outlined text-base">logout</span>
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-            <div className="flex items-center gap-3 pl-2">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold">{userName}</p>
-                <p className="text-xs text-slate-500">Premium Member</p>
-              </div>
-              <div className="size-10 rounded-full border-2 border-primary/20 overflow-hidden">
-                <img
-                  className="h-full w-full object-cover"
-                  alt="User profile avatar"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgKFZ3-0WTUhN7tWkpJxVUxE3Bv8oIKMLrHqq30LW_R1rbpXUI8QFBeI1pHpJbeGwnbT0Gue3XNusn-dFKRq3VDRU9VW_OO87v6PJZ5uE-SxnhujWj6g3-pttFOUt9WhkLCV14lzJX0r25oFF-K2NjHcO4tCInRzCEUfJ-iGVG5UsurmaSyFl1mx47tvyy205CFHyy4chetFNBM746uuSo80k76MRH5Jpjrgyz9zZiWR3qvyZvIZf9WBGkeeSKEcq5jJZ1tGlS3D0"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader 
+        title="HealthScan AI" 
+        onLogout={onLogout}
+      />
 
       <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Sidebar */}
@@ -291,6 +293,16 @@ export default function FootScanAnalysis({ onLogout }) {
                       setSugarBeforeFast={setSugarBeforeFast}
                       compact={true}
                     />
+                    {age && bmi && sugarBeforeFast && (
+                      <button
+                        onClick={handleViewHealthMetrics}
+                        disabled={isAnalyzing}
+                        className="w-full mt-4 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-blue-600 text-white font-semibold hover:from-primary/90 hover:to-blue-600/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-base">assessment</span>
+                        View Health Assessment
+                      </button>
+                    )}
                   </div>
 
                   {/* Image Preview Card */}

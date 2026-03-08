@@ -19,12 +19,45 @@ def load_cnn_model():
     
     model = create_model(num_classes=2, pretrained=True)
     
-    if os.path.exists(settings.cnn_model_path):
-        try:
-            checkpoint = torch.load(settings.cnn_model_path, map_location='cpu')
-            model.load_state_dict(checkpoint)
-        except:
-            logger.warning(f"Could not load checkpoint from {settings.cnn_model_path}, using pretrained")
+    # Build list of checkpoint paths to try (with multiple fallbacks)
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # Get repo root
+    models_dir = os.path.join(base_dir, "models")
+    
+    checkpoint_paths = [
+        # Try the configured path first
+        settings.cnn_model_path,
+        # Try models directory with standard names
+        os.path.join(models_dir, "best_dfu_model.pth"),
+        os.path.join(models_dir, "cnn_ulcer_model.pth"),
+        # Try model_weights directory (legacy)
+        os.path.join(base_dir, "model_weights", "best_dfu_model.pth"),
+        os.path.join(base_dir, "model_weights", "cnn_ulcer_model.pth"),
+    ]
+    
+    logger.info(f"CNN Model Root Directory: {models_dir}")
+    logger.info(f"CNN Model paths to try: {checkpoint_paths}")
+    
+    loaded = False
+    for path in checkpoint_paths:
+        # Convert relative paths to absolute
+        if not os.path.isabs(path):
+            path = os.path.abspath(path)
+        
+        logger.info(f"Checking path: {path} | Exists: {os.path.exists(path)}")
+        
+        if os.path.exists(path):
+            try:
+                checkpoint = torch.load(path, map_location='cpu')
+                model.load_state_dict(checkpoint)
+                logger.info(f"✓ Successfully loaded CNN model from {path}")
+                loaded = True
+                break
+            except Exception as e:
+                logger.warning(f"Could not load checkpoint from {path}: {e}")
+    
+    if not loaded:
+        logger.warning("⚠ No CNN checkpoint found, using ImageNet pretrained weights (model accuracy may be affected)")
+        logger.info(f"To fix: Train model with: python train_dfu_model.py")
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)

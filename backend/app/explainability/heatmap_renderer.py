@@ -15,7 +15,7 @@ def render_heatmap_overlay(
     colormap: int = cv2.COLORMAP_JET
 ) -> str:
     """
-    Overlay a Grad-CAM heatmap on the original image.
+    Overlay a Grad-CAM heatmap on the original image with foot region masking.
     
     Args:
         original_image_path: Path to original image file or URL
@@ -43,6 +43,19 @@ def render_heatmap_overlay(
         if img_array is None:
             raise ValueError(f"Could not load image from {original_image_path}")
     
+    # Create foot region mask (detect non-background pixels)
+    # Convert to grayscale for background detection
+    gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
+    
+    # Create mask: pixels that are not pure black (background) are part of the foot
+    # Threshold: any pixel with grayscale value > 30 is considered part of foot
+    _, foot_mask = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
+    
+    # Apply morphological operations to clean up the mask
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    foot_mask = cv2.morphologyEx(foot_mask, cv2.MORPH_CLOSE, kernel)
+    foot_mask = cv2.morphologyEx(foot_mask, cv2.MORPH_OPEN, kernel)
+    
     # Convert heatmap to numpy array if needed
     if isinstance(heatmap_matrix, list):
         heatmap_array = np.array(heatmap_matrix, dtype=np.uint8)
@@ -59,11 +72,25 @@ def render_heatmap_overlay(
     # Resize heatmap to match image size
     heatmap_resized = cv2.resize(heatmap_array, (img_array.shape[1], img_array.shape[0]))
     
-    # Apply colormap to heatmap
-    heatmap_colored = cv2.applyColorMap(heatmap_resized, colormap)
+    # Apply foot mask to heatmap (zero out background regions)
+    heatmap_masked = cv2.bitwise_and(heatmap_resized, heatmap_resized, mask=foot_mask)
     
-    # Blend original image with heatmap overlay
+    # Apply colormap to masked heatmap
+    heatmap_colored = cv2.applyColorMap(heatmap_masked, colormap)
+    
+    # Create output: where mask is 0 (background), use original image; where mask is 1, blend
+    channels = cv2.split(heatmap_colored)
+    for i, channel in enumerate(channels):
+        # Set background regions to original image
+        heatmap_colored[:, :, i] = np.where(foot_mask == 0, img_array[:, :, i], channel)
+    
+    # Blend original image with heatmap overlay only on foot region
     overlay = cv2.addWeighted(img_array, 1 - alpha, heatmap_colored, alpha, 0)
+    
+    # Further apply the mask to ensure clean separation
+    # Replace background with original image
+    for c in range(3):
+        overlay[:, :, c] = np.where(foot_mask == 0, img_array[:, :, c], overlay[:, :, c])
     
     # Encode to base64
     ret, buffer = cv2.imencode('.jpg', overlay)

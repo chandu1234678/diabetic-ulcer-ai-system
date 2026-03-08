@@ -7,6 +7,7 @@ import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import FootScanAnalysis from './pages/FootScanAnalysis'
 import ScanResults from './pages/ScanResults'
+import HealthMetricsResults from './pages/HealthMetricsResults'
 import AccountSettings from './pages/AccountSettings'
 import ChatbotWorkspace from './pages/ChatbotWorkspace'
 import History from './pages/History'
@@ -99,6 +100,14 @@ function App() {
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
             <ScanResults onLogout={authApi.logout} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/health-metrics-results"
+        element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <HealthMetricsResults onLogout={authApi.logout} />
           </ProtectedRoute>
         }
       />

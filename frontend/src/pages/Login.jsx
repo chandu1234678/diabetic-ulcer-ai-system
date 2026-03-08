@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '../services/api'
-import { applyDarkMode } from '../utils/darkMode'
 
 export default function Login({ onLogin }) {
   const navigate = useNavigate()
@@ -11,11 +10,6 @@ export default function Login({ onLogin }) {
   const [error, setError] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-
-  // Apply dark mode on mount
-  useEffect(() => {
-    applyDarkMode()
-  }, [])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -46,15 +40,15 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-slate-900 font-display text-slate-900 dark:text-white flex flex-col">
-      <main className="flex-grow flex items-center justify-center bg-gradient-to-br from-primary/10 via-background-light dark:from-slate-900 dark:via-slate-800 to-primary/5 dark:to-slate-900 p-4">
-        <div className="w-full max-w-md overflow-hidden rounded-xl border border-primary/10 bg-white dark:bg-slate-800 shadow-xl shadow-primary/5 dark:shadow-slate-900/30">
+    <div className="min-h-screen bg-background-light font-display text-slate-900 flex flex-col">
+      <main className="flex-grow flex items-center justify-center bg-gradient-to-br from-primary/10 via-background-light to-primary/5 p-4">
+        <div className="w-full max-w-md overflow-hidden rounded-xl border border-primary/10 bg-white shadow-xl shadow-primary/5">
           <div className="p-8 text-center">
             <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <span className="material-symbols-outlined text-4xl text-primary">medical_services</span>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Welcome Back</h2>
-            <p className="mt-2 text-slate-500 dark:text-slate-400">Sign in to your account to continue</p>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Welcome Back</h2>
+            <p className="mt-2 text-slate-500">Sign in to your account to continue</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 px-8 pb-8 pt-2">

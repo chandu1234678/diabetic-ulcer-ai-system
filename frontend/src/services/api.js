@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-  timeout: 20000,
+  timeout: 60000, // 60s for large file uploads
 })
 
 api.interceptors.request.use((config) => {
@@ -23,12 +23,39 @@ export async function register(payload) {
   return data
 }
 
-export async function uploadImage(file) {
+export async function uploadImage(file, retries = 3) {
   const formData = new FormData()
   formData.append('file', file)
 
-  const { data } = await api.post('/upload', formData)
-  return data
+  let lastError = null
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const { data } = await api.post('/upload', formData, {
+        // Let axios handle Content-Type for FormData
+        headers: {
+          // Don't set Content-Type here - axios will set it with boundary
+        },
+        timeout: 60000,
+      })
+      return data
+    } catch (error) {
+      lastError = error
+      console.warn(`Upload attempt ${attempt}/${retries} failed:`, error.message)
+      
+      // Don't retry on validation errors (400, 422)
+      if (error.response?.status === 400 || error.response?.status === 422) {
+        throw error
+      }
+      
+      // Wait before retrying (exponential backoff)
+      if (attempt < retries) {
+        const delay = Math.pow(2, attempt - 1) * 1000 // 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+  
+  throw lastError
 }
 
 export async function predict(payload) {
