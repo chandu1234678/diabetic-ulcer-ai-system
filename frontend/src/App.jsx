@@ -11,6 +11,7 @@ import HealthMetricsResults from './pages/HealthMetricsResults'
 import AccountSettings from './pages/AccountSettings'
 import ChatbotWorkspace from './pages/ChatbotWorkspace'
 import History from './pages/History'
+import { login, logout } from './services/api'
 
 function ProtectedRoute({ isAuthenticated, children }) {
   // No login restriction: always render children
@@ -23,17 +24,17 @@ function App() {
   )
   return (
     <Routes>
-      <Route path="/login" element={<Login onLogin={authApi.login} />} />
+      <Route path="/login" element={<Login onLogin={login} />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/signup" element={<Signup onLogin={authApi.login} />} />
+      <Route path="/signup" element={<Signup onLogin={login} />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/dashboard" element={<Dashboard onLogout={authApi.logout} />} />
-      <Route path="/foot-scan-analysis" element={<FootScanAnalysis onLogout={authApi.logout} />} />
-      <Route path="/scan-results" element={<ScanResults onLogout={authApi.logout} />} />
-      <Route path="/health-metrics-results" element={<HealthMetricsResults onLogout={authApi.logout} />} />
-      <Route path="/account-settings" element={<AccountSettings onLogout={authApi.logout} />} />
-      <Route path="/chatbot" element={<ChatbotWorkspace onLogout={authApi.logout} />} />
-      <Route path="/history" element={<History onLogout={authApi.logout} />} />
+      <Route path="/dashboard" element={<Dashboard onLogout={logout} />} />
+      <Route path="/foot-scan-analysis" element={<FootScanAnalysis onLogout={logout} />} />
+      <Route path="/scan-results" element={<ScanResults onLogout={logout} />} />
+      <Route path="/health-metrics-results" element={<HealthMetricsResults onLogout={logout} />} />
+      <Route path="/account-settings" element={<AccountSettings onLogout={logout} />} />
+      <Route path="/chatbot" element={<ChatbotWorkspace onLogout={logout} />} />
+      <Route path="/history" element={<History onLogout={logout} />} />
       <Route path="/image-analysis" element={<Navigate to="/chatbot" replace />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
