@@ -12,12 +12,12 @@ services:
       - key: PYTHON_VERSION
         value: "3.11.0"
       - key: SECRET_KEY
-        generateValue: true
+        value: "oyx94N0I6vlEa7xQ8pOvIzNxtTA8kpRHMs8ePGWi5qk"
       - key: ENVIRONMENT
         value: production
       - key: CLOUDINARY_CLOUD_NAME
-        sync: false
+        value: "your-cloudinary-cloud-name"
       - key: CLOUDINARY_API_KEY
-        sync: false
+        value: "your-cloudinary-api-key"
       - key: CLOUDINARY_API_SECRET
-        sync: false
+        value: "your-cloudinary-api-secret"
