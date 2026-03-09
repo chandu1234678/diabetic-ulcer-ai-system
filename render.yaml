@@ -22,12 +22,12 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
 
-  # Frontend Static Site
+  # Frontend Web Service
   - type: web
     name: medvision-ai-frontend
-    env: static
+    env: node
     buildCommand: "cd frontend && npm install && npm run build"
-    staticPublishPath: frontend/dist
+    startCommand: "cd frontend && npm run preview"
     plan: free
     envVars:
       - key: VITE_API_BASE_URL
