@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Quick database reset for external PostgreSQL databases.
-Works with any PostgreSQL database URL (not just Render).
+Database reset script for SQLite database.
+Works with the local SQLite database file.
 
 Usage:
     python reset_external_db.py          # Interactive mode
@@ -11,157 +11,67 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from urllib.parse import urlparse
 
-# Load .env file first
-try:
-    from dotenv import load_dotenv
-    env_file = Path(__file__).parent / ".env"
-    if env_file.exists():
-        load_dotenv(env_file)
-        print(f"✓ Loaded environment from {env_file}")
-except ImportError:
-    # Try manual loading if dotenv not available
-    env_file = Path(__file__).parent / ".env"
-    if env_file.exists():
-        with open(env_file) as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    key, value = line.split("=", 1)
-                    os.environ[key.strip()] = value.strip()
-        print(f"✓ Loaded environment from {env_file}")
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent))
 
-def get_database_url():
-    """Get DATABASE_URL from environment variable."""
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        print("❌ DATABASE_URL not found in environment variables")
-        print("\nTo set it, add to your .env file in backend folder:")
-        print("  DATABASE_URL=postgresql://user:password@host:5432/dbname")
-        return None
-    return url
+from app.database import Base, engine
+from app.models import User, Patient, PredictionLog, UlcerImage
+import logging
 
-def parse_database_url(url):
-    """Parse PostgreSQL connection string."""
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def reset_sqlite_db():
+    """
+    Reset the SQLite database by dropping and recreating all tables.
+    """
     try:
-        parsed = urlparse(url)
-        return {
-            "user": parsed.username,
-            "password": parsed.password,
-            "host": parsed.hostname,
-            "port": parsed.port or 5432,
-            "database": parsed.path.lstrip("/"),
-            "full_url": url
-        }
+        logger.info("Resetting SQLite database...")
+
+        # Drop all tables
+        logger.info("Dropping all existing tables...")
+        Base.metadata.drop_all(bind=engine)
+        logger.info("✓ All tables dropped")
+
+        # Create all tables
+        logger.info("Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("✓ Database tables created successfully")
+
+        # Verify tables were created
+        try:
+            from sqlalchemy import inspect
+            inspector = inspect(engine)
+            tables = inspector.get_table_names()
+            logger.info(f"✓ Tables created: {', '.join(tables)}")
+        except Exception as e:
+            logger.warning(f"Could not verify tables: {e}")
+
+        logger.info("✓ SQLite database reset complete!")
+
     except Exception as e:
-        print(f"❌ Error parsing database URL: {e}")
-        return None
+        logger.error(f"❌ Error resetting database: {e}")
+        sys.exit(1)
 
-def reset_external_database(db_config):
-    """Reset external PostgreSQL database."""
-    try:
-        import psycopg2
-        from psycopg2 import extras
-    except ImportError:
-        print("❌ psycopg2 not installed")
-        print("\nInstall it with:")
-        print("  pip install psycopg2-binary")
-        return False
-    
-    print("\n" + "=" * 60)
-    print("EXTERNAL DATABASE RESET")
-    print("=" * 60)
-    print(f"\nDatabase: {db_config['database']}")
-    print(f"Host: {db_config['host']}")
-    print(f"User: {db_config['user']}")
-    print(f"Port: {db_config['port']}")
-    
-    confirm = input("\n⚠️  This will DELETE ALL DATA. Type 'RESET' to confirm: ").strip()
-    if confirm != "RESET":
-        print("❌ Reset cancelled")
-        return False
-    
-    try:
-        print("\n🔌 Connecting to database...")
-        conn = psycopg2.connect(
-            user=db_config["user"],
-            password=db_config["password"],
-            host=db_config["host"],
-            port=db_config["port"],
-            database=db_config["database"]
-        )
-        conn.autocommit = True
-        cursor = conn.cursor()
-        
-        print("✓ Connected")
-        
-        # Delete data in order (respecting foreign keys)
-        tables = [
-            "prediction_logs",
-            "ulcer_images", 
-            "patients",
-            "health_metrics",
-            "users"
-        ]
-        
-        for table in tables:
-            try:
-                cursor.execute(f"DELETE FROM {table} CASCADE;")
-                count = cursor.rowcount
-                print(f"✓ Cleared {table} ({count} rows deleted)")
-            except Exception as e:
-                print(f"⚠️  {table}: {str(e)}")
-        
-        cursor.close()
-        conn.close()
-        
-        print("\n" + "=" * 60)
-        print("✓ DATABASE RESET COMPLETE")
-        print("=" * 60)
-        print("\nYou can now create a new account:")
-        print("  Email: your-email@example.com")
-        print("  Password: at least 8 characters")
-        print("\nNext: Deploy to Render with 'git push'")
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error connecting to database: {e}")
-        print("\nCommon causes:")
-        print("  - Invalid DATABASE_URL format")
-        print("  - Host/port incorrect")
-        print("  - Username/password wrong")
-        print("  - Database doesn't exist")
-        return False
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Reset external PostgreSQL database",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python reset_external_db.py              # Interactive (uses .env)
-  python reset_external_db.py --auto       # Auto mode (uses environment)
-        """
-    )
-    parser.add_argument("--auto", action="store_true", help="Skip confirmation prompt")
+    parser = argparse.ArgumentParser(description="Reset SQLite database")
+    parser.add_argument("--auto", action="store_true", help="Use DATABASE_URL from environment")
     args = parser.parse_args()
-    
-    # Get DATABASE_URL
-    database_url = get_database_url()
-    if not database_url:
-        sys.exit(1)
-    
-    # Parse it
-    db_config = parse_database_url(database_url)
-    if not db_config:
-        sys.exit(1)
-    
-    # Reset
-    if reset_external_database(db_config):
-        sys.exit(0)
+
+    if args.auto:
+        reset_sqlite_db()
     else:
-        sys.exit(1)
+        # Interactive mode
+        print("This will reset the SQLite database (drop and recreate all tables).")
+        confirm = input("Are you sure? (y/N): ").lower().strip()
+        if confirm == 'y':
+            reset_sqlite_db()
+        else:
+            print("Operation cancelled.")
+
 
 if __name__ == "__main__":
     main()
