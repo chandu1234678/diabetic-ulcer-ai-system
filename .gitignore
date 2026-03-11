@@ -11,8 +11,10 @@ __pycache__/
 
 # Virtual environments
 venv/
+env/
+.venv/
 .env/
-.env.*
+ENV/
 
 # Python build
 build/
@@ -26,7 +28,18 @@ dist/
 *.joblib
 *.h5
 *.pt
-*.pth
+# *.pth  # COMMENTED OUT - We need to commit model files for deployment
+
+# IMPORTANT: Model files in backend/models/ should be committed
+# If models are too large (>100MB), use Git LFS or external storage
+
+# Large ML folders (exclude from deployment)
+datasets/
+notebooks/
+logs/
+mlops/
+mlruns/
+experiments/
 
 # -------------------------
 # Node / React
@@ -56,21 +69,43 @@ docker-data/
 # -------------------------
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # -------------------------
 # OS Files
 # -------------------------
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # -------------------------
 # Testing
 # -------------------------
 .coverage
 htmlcov/
+.pytest_cache/
+.tox/
 
 # -------------------------
 # Temporary
 # -------------------------
 *.tmp
 *.temp
+tmp/
+temp/
+
+# -------------------------
+# Secrets (NEVER commit)
+# -------------------------
+.env
+*.pem
+*.key
+secrets/
+
+# -------------------------
+# Uploads (user-generated content)
+# -------------------------
+backend/uploads/
+uploads/

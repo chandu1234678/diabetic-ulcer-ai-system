@@ -1,0 +1,62 @@
+# Exclude large folders from Render deployment
+datasets/
+notebooks/
+logs/
+mlops/
+mlruns/
+experiments/
+
+# Frontend (not needed for backend deployment)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# Development files
+.vscode/
+.idea/
+*.md
+!README.md
+!DEPLOYMENT_GUIDE.md
+
+# Test files
+tests/
+__tests__/
+*.test.py
+*.spec.py
+
+# Documentation
+docs/
+
+# Git
+.git/
+.gitignore
+
+# Environment (use Render dashboard instead)
+.env
+.env.*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# User uploads (regenerated)
+backend/uploads/*
+!backend/uploads/.gitkeep

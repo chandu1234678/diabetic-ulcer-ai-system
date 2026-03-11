@@ -4,26 +4,96 @@ services:
     name: medvision-ai-backend
     env: python
     region: oregon
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    # Correct build command - install build tools first, then dependencies
+    buildCommand: "pip install --upgrade pip setuptools wheel && pip install -r backend/requirements.txt"
+    # Correct start command - use uvicorn from backend context
+    startCommand: "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
     plan: free
+    # Health check endpoint
     healthCheckPath: /health
+    # Auto-deploy on push
+    autoDeploy: true
+    
+    # Environment Variables
     envVars:
+      # Python version - MUST be 3.11.x for ML dependencies compatibility
       - key: PYTHON_VERSION
-        value: "3.11.0"
-      - key: SECRET_KEY
-        value: "b3befe8343433ff9266aeadbd53bfdc8c5cfacb242901cd106cbd5499745adc1"
-      - key: JWT_SECRET_KEY
-        value: "729759ef41d7905ef8e0b562fa70ea91674a11de86dbf102e84344dc48beebb5"
+        value: "3.11.9"
+      
+      # Environment
       - key: ENVIRONMENT
         value: production
+      
       - key: DEBUG
         value: "False"
-      - key: CLOUDINARY_CLOUD_NAME
-        value: "your-cloudinary-cloud-name"
-      - key: CLOUDINARY_API_KEY
-        value: "your-cloudinary-api-key"
-      - key: CLOUDINARY_API_SECRET
-        value: "a2e7ebff1a881cf9de287ad2ca1f2cbb1b57a1ebc56d580e0e445d3c280dd560"
+      
+      # Security - CHANGE THESE IN PRODUCTION!
+      - key: SECRET_KEY
+        generateValue: true
+      
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      
+      - key: JWT_ALGORITHM
+        value: HS256
+      
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      
+      # Database - Using SQLite (no external DB needed for free tier)
       - key: DATABASE_URL
-        value: "sqlite:///./test.db"
+        value: sqlite:///./medvision.db
+      
+      # Frontend URL - Update this after deploying frontend to Vercel
+      - key: FRONTEND_URL
+        value: https://your-frontend-app.vercel.app
+      
+      # CORS - Update with your actual frontend URL
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend-app.vercel.app,http://localhost:3000,http://localhost:5173
+      
+      # Cloudinary (Optional - for cloud image storage)
+      - key: CLOUDINARY_CLOUD_NAME
+        value: ""
+      
+      - key: CLOUDINARY_API_KEY
+        value: ""
+      
+      - key: CLOUDINARY_API_SECRET
+        value: ""
+      
+      # Email (Optional - for password reset)
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      
+      - key: SMTP_PORT
+        value: "587"
+      
+      - key: SMTP_USERNAME
+        value: ""
+      
+      - key: SMTP_PASSWORD
+        value: ""
+      
+      - key: SMTP_FROM_EMAIL
+        value: noreply@diabeticulcer.com
+      
+      - key: SMTP_FROM_NAME
+        value: Diabetic Ulcer AI System
+      
+      # ML Model Paths (relative to project root)
+      - key: CNN_MODEL_PATH
+        value: backend/models/best_dfu_model.pth
+      
+      - key: SEGMENTATION_MODEL_PATH
+        value: backend/models/segmentation_model.pth
+      
+      - key: MULTIMODAL_MODEL_PATH
+        value: backend/models/multimodal_model.pth
+
+# DEPLOYMENT NOTES:
+# 1. After deploying backend, copy the Render URL (e.g., https://medvision-ai-backend.onrender.com)
+# 2. Update FRONTEND_URL and ALLOWED_ORIGINS with your actual Vercel frontend URL
+# 3. For production, generate secure values for SECRET_KEY and JWT_SECRET_KEY
+# 4. ML models will use pretrained weights if .pth files are not found (non-blocking)
+# 5. The backend will start successfully even if models are missing
