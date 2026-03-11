@@ -4,20 +4,24 @@ services:
     name: medvision-ai-backend
     env: python
     region: oregon
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     plan: free
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.0"
       - key: SECRET_KEY
-        value: "oyx94N0I6vlEa7xQ8pOvIzNxtTA8kpRHMs8ePGWi5qk"
+        value: "b3befe8343433ff9266aeadbd53bfdc8c5cfacb242901cd106cbd5499745adc1"
+      - key: JWT_SECRET_KEY
+        value: "your-jwt-secret-key-change-this-in-production-please-use-a-long-random-string"
       - key: ENVIRONMENT
         value: production
+      - key: DEBUG
+        value: "False"
       - key: CLOUDINARY_CLOUD_NAME
         value: "your-cloudinary-cloud-name"
       - key: CLOUDINARY_API_KEY
         value: "your-cloudinary-api-key"
       - key: CLOUDINARY_API_SECRET
-        value: "your-cloudinary-api-secret"
+        value: "a2e7ebff1a881cf9de287ad2ca1f2cbb1b57a1ebc56d580e0e445d3c280dd560"
