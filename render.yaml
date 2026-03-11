@@ -17,8 +17,8 @@ services:
     # Environment Variables
     envVars:
       # Python version - MUST be 3.11.x for ML dependencies compatibility
-      - key: PYTHON_VERSION
-        value: "3.11.9"
+      
+    
       
       # Environment
       - key: ENVIRONMENT
