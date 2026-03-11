@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import make_asgi_app
-from app.database import Base, engine
-from app.config import settings
-from app.auth.auth_router import router as auth_router
-from app.routes import health, predict, upload, reports, patients, patient_progression, statistics, health_metrics, diagnostics
-from app import models
+from backend.app.database import Base, engine
+from backend.app.config import settings
+from backend.app.auth.auth_router import router as auth_router
+from backend.app.routes import health, predict, upload, reports, patients, patient_progression, statistics, health_metrics, diagnostics
+from backend.app import models
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

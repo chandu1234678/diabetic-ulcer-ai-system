@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.models import User
-from app.schemas import UserCreate, UserLogin, TokenResponse, UserForgotPassword, UserResetPassword
-from app.auth.password_utils import hash_password, verify_password
-from app.auth.jwt_handler import create_access_token
-from app.auth.dependencies import get_current_user
-from app.auth.password_reset_handler import (
+from backend.app.database import get_db
+from backend.app.models import User
+from backend.app.schemas import UserCreate, UserLogin, TokenResponse, UserForgotPassword, UserResetPassword
+from backend.app.auth.password_utils import hash_password, verify_password
+from backend.app.auth.jwt_handler import create_access_token
+from backend.app.auth.dependencies import get_current_user
+from backend.app.auth.password_reset_handler import (
     generate_password_reset_token,
     verify_password_reset_token,
     send_password_reset_email
@@ -76,7 +76,7 @@ def forgot_password(request: UserForgotPassword, db: Session = Depends(get_db)):
     
     if not user:
         # For development: still return the base message but skip token generation
-        from app.config import settings
+        from backend.app.config import settings
         if settings.environment == "development" and not settings.smtp_username:
             return {
                 "message": base_message,

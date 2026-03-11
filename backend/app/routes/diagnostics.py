@@ -5,9 +5,9 @@ Provides read-only access to database status and user info (dev only).
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app.models import User
-from app.config import settings
+from backend.app.database import get_db
+from backend.app.models import User
+from backend.app.config import settings
 from typing import List
 
 router = APIRouter(prefix="/diagnostics", tags=["diagnostics"], include_in_schema=True)

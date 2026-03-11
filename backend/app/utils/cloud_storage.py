@@ -1,6 +1,6 @@
 import cloudinary
 import cloudinary.uploader
-from app.config import settings
+from backend.app.config import settings
 from PIL import Image
 import io
 
