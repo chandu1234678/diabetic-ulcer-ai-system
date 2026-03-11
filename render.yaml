@@ -5,7 +5,7 @@ services:
     env: python
     region: oregon
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    startCommand: "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
     plan: free
     healthCheckPath: /health
     envVars:
@@ -14,7 +14,7 @@ services:
       - key: SECRET_KEY
         value: "b3befe8343433ff9266aeadbd53bfdc8c5cfacb242901cd106cbd5499745adc1"
       - key: JWT_SECRET_KEY
-        value: "your-jwt-secret-key-change-this-in-production-please-use-a-long-random-string"
+        value: "729759ef41d7905ef8e0b562fa70ea91674a11de86dbf102e84344dc48beebb5"
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
@@ -25,3 +25,5 @@ services:
         value: "your-cloudinary-api-key"
       - key: CLOUDINARY_API_SECRET
         value: "a2e7ebff1a881cf9de287ad2ca1f2cbb1b57a1ebc56d580e0e445d3c280dd560"
+      - key: DATABASE_URL
+        value: "sqlite:///./test.db"
